@@ -3,9 +3,24 @@
 var STEP_URL = 'http://127.0.0.1:8765/step';
 var REQUEST_TIMEOUT_MS = 2500;
 
-// Follow the phone's language: the Pebble iOS app sets navigator.language to
-// the phone's locale, e.g. "vi_VN" or "en_US".
-var LANG = String(navigator.language || 'en').toLowerCase().indexOf('vi') === 0 ? 'vi' : 'en';
+// Language of the watch texts. The nav app sends the phone's language ("lang")
+// with every reply; that wins. navigator.language can't be used: the Pebble iOS
+// app is English-only, so on a Vietnamese phone it reports "en_VN". Until the
+// nav app answers, use the watch's own language (set by its language pack).
+var navLang = null;
+
+function fallbackLang() {
+  var code = '';
+  try {
+    var info = Pebble.getActiveWatchInfo && Pebble.getActiveWatchInfo();
+    code = (info && info.language) || '';
+  } catch (e) {}
+  return String(code).toLowerCase().indexOf('vi') === 0 ? 'vi' : 'en';
+}
+
+function lang() {
+  return navLang || fallbackLang();
+}
 var STRINGS = {
   navAppError: ['Nav app error ', 'Lỗi ứng dụng '],
   badData: ['Bad data from nav app', 'Dữ liệu không hợp lệ'],
@@ -22,14 +37,15 @@ var STRINGS = {
 };
 
 function T(key, values) {
-  var text = STRINGS[key][LANG === 'vi' ? 1 : 0];
+  var text = STRINGS[key][lang() === 'vi' ? 1 : 0];
   for (var k in values || {}) text = text.replace('{' + k + '}', values[k]);
   return text;
 }
 
-// Every message carries the language so the watch's own texts match the phone.
+// Once the nav app has told us the phone's language, every message carries it so
+// the watch's own texts match. Before that the watch keeps its own language.
 function send(dict) {
-  dict.Lang = LANG;
+  if (navLang) dict.Lang = navLang;
   Pebble.sendAppMessage(dict);
 }
 
@@ -102,6 +118,7 @@ function sendProbe() {
 }
 
 function handleStep(s) {
+  if (s.lang === 'vi' || s.lang === 'en') navLang = s.lang;
   if (s.ended) {
     hadStep = false;
     send({ Ended: 1, Instruction: s.reason || '' });

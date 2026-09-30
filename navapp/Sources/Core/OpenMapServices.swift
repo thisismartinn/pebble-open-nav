@@ -38,10 +38,20 @@ public enum OpenMapServices {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            let message = (try? JSONDecoder().decode(ValhallaError.self, from: data))?.error
-            throw ServiceError(message: message ?? String(localized: "Couldn't get a route"))
+            let code = (try? JSONDecoder().decode(ValhallaError.self, from: data))?.errorCode
+            throw ServiceError(message: routeErrorMessage(code))
         }
         return try parseRoute(data)
+    }
+
+    /// Valhalla's error texts are English-only, so show our own translated message.
+    static func routeErrorMessage(_ code: Int?) -> String {
+        switch code {
+        case 170, 171: String(localized: "There are no roads near this place.")
+        case 442: String(localized: "No route found to this place.")
+        case 154: String(localized: "This trip is too long to route.")
+        default: String(localized: "Couldn't get a route")
+        }
     }
 
     /// Parses a Valhalla /route response.
@@ -110,7 +120,11 @@ struct ValhallaResponse: Decodable {
     let trip: Trip
 }
 
-struct ValhallaError: Decodable { let error: String }
+struct ValhallaError: Decodable {
+    let errorCode: Int?
+
+    enum CodingKeys: String, CodingKey { case errorCode = "error_code" }
+}
 
 struct PhotonResponse: Decodable {
     struct Feature: Decodable {

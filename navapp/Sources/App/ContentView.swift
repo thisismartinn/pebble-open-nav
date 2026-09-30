@@ -129,7 +129,11 @@ private struct TripSheet: View {
                     prompt: "Search for a place or address")
         .onSubmit(of: .search) { nav.search() }
         .onChange(of: searchActive) { _, active in
-            if active { detent = .large }
+            if active {
+                detent = .large
+            } else if detent == .large {
+                detent = .medium  // search cancelled: show the map again
+            }
         }
     }
 

@@ -48,9 +48,12 @@ English otherwise.
 - **iPhone app:** UI texts in `navapp/Resources/{en,vi}.lproj/Localizable.strings`,
   the permission prompt in `vi.lproj/InfoPlist.strings`, and Valhalla directions in
   `vi-VN` or `en-US`.
-- **Watchapp:** the JavaScript reads `navigator.language`, which the Pebble iOS app
-  sets to the phone's locale, and sends `Lang` with every message. Until the first
-  message arrives, the watch uses its own language setting.
+- **Watchapp:** the nav app sends `"lang": "vi" | "en"` in every reply, and the
+  JavaScript passes it to the watch as `Lang`. Until the nav app answers, the watch
+  uses its own language (`Pebble.getActiveWatchInfo().language`, set by its language
+  pack). `navigator.language` isn't used, because the Pebble iOS app is English-only
+  and reports e.g. `en_VN` on a Vietnamese phone.
+- Vietnamese uses a decimal comma for distances ("Còn 8,4 km").
 
 ## Test on your iPhone
 

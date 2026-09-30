@@ -35,3 +35,6 @@
 "Checked in %lld s ago · %lld times · longest gap %lld s" = "Checked in %lld s ago · %lld times · longest gap %lld s";
 "Couldn't get a route" = "Couldn't get a route";
 "Unnamed place" = "Unnamed place";
+"There are no roads near this place." = "There are no roads near this place.";
+"No route found to this place." = "No route found to this place.";
+"This trip is too long to route." = "This trip is too long to route.";

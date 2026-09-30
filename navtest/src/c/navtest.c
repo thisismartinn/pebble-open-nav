@@ -83,7 +83,7 @@ static void prv_arrow_update(Layer *layer, GContext *ctx) {
 static void prv_format_distance(int m) {
   if (m < 0) s_dist[0] = '\0';
   else if (m < 1000) snprintf(s_dist, sizeof(s_dist), "%d m", (m < 100) ? (m / 5) * 5 : (m / 10) * 10);
-  else snprintf(s_dist, sizeof(s_dist), "%d.%d km", m / 1000, (m % 1000) / 100);
+  else snprintf(s_dist, sizeof(s_dist), TR("%d.%d km", "%d,%d km"), m / 1000, (m % 1000) / 100);
 }
 
 static void prv_refresh(void) {

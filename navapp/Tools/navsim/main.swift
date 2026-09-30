@@ -45,6 +45,7 @@ let server = StepServer()
 server.onStateChange = { state in
     if case .failed(let message) = state { print("Server on 127.0.0.1:\(StepServer.port) failed: \(message)") }
 }
+server.publish(WatchStep.idle(vietnamese: vietnamese))
 server.start()
 
 Task {
@@ -64,7 +65,8 @@ Task {
             let fix = position(on: route, at: min(travelled, route.totalLength))
             guard let u = guidance.update(fix) else { break }
             if u.arrived {
-                server.publish(WatchStep.ended(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived"))
+                server.publish(WatchStep.ended(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived",
+                                               vietnamese: vietnamese))
                 print("Arrived. Serving \"ended\" for 20 s.")
                 break
             }

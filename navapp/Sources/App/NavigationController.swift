@@ -54,6 +54,7 @@ final class NavigationController: NSObject, ObservableObject {
         server.onStateChange = { [weak self] state in
             Task { @MainActor in self?.serverStateChanged(state) }
         }
+        server.publish(WatchStep.idle(vietnamese: vietnamese))
         server.start()
         refreshWatchStatus()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -107,6 +108,8 @@ final class NavigationController: NSObject, ObservableObject {
         destination = place
         destinationName = place.name
         results = []
+        lastSearch = nil
+        query = ""
         route = nil
         update = nil
         guidance = nil
@@ -115,7 +118,7 @@ final class NavigationController: NSObject, ObservableObject {
         awaitingFix = true
         server.start()
         server.resetStats()
-        server.publish(WatchStep.routing)
+        server.publish(WatchStep.routing(vietnamese: vietnamese))
         startGPS()
         refreshAccuracy()
         // Route from a fresh fix: `location` may be minutes old if the app was in the background.
@@ -129,7 +132,7 @@ final class NavigationController: NSObject, ObservableObject {
         destinationName = nil
         awaitingFix = false
         phase = .idle
-        server.publish(WatchStep.idle)
+        server.publish(WatchStep.idle(vietnamese: vietnamese))
         stopGPS()
     }
 
@@ -200,7 +203,7 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     private func finish(reason: String) {
-        server.publish(WatchStep.ended(reason: reason))
+        server.publish(WatchStep.ended(reason: reason, vietnamese: vietnamese))
         phase = .ended(reason)
         guidance = nil
         tripID = nil

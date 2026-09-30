@@ -35,3 +35,6 @@
 "Checked in %lld s ago · %lld times · longest gap %lld s" = "Kết nối %lld giây trước · %lld lần · gián đoạn lâu nhất %lld giây";
 "Couldn't get a route" = "Không tìm được đường đi";
 "Unnamed place" = "Địa điểm không tên";
+"There are no roads near this place." = "Không có đường nào gần địa điểm này.";
+"No route found to this place." = "Không tìm thấy đường đến địa điểm này.";
+"This trip is too long to route." = "Chuyến đi quá dài để tìm đường.";

@@ -137,10 +137,20 @@ public final class Guidance {
 }
 
 /// Builds the JSON the watchapp's phone-side JavaScript fetches from 127.0.0.1.
+/// Every payload carries "lang" ("vi" or "en"): the nav app is the watch's only
+/// reliable source for the phone's language, because the Pebble iOS app is
+/// English-only and reports e.g. "en_VN" on a Vietnamese phone.
 public enum WatchStep {
-    public static let idle: [String: Any] = ["active": false]
+    public static func idle(vietnamese: Bool) -> [String: Any] {
+        ["active": false, "lang": lang(vietnamese)]
+    }
+
     /// A trip has started but there's no route or GPS fix yet.
-    public static let routing: [String: Any] = ["active": false, "routing": true]
+    public static func routing(vietnamese: Bool) -> [String: Any] {
+        ["active": false, "routing": true, "lang": lang(vietnamese)]
+    }
+
+    private static func lang(_ vietnamese: Bool) -> String { vietnamese ? "vi" : "en" }
 
     /// Fixed 24-hour Latin digits whatever the phone's region and 12/24-hour setting,
     /// since the watch fonts only cover Latin text.
@@ -151,16 +161,18 @@ public enum WatchStep {
         return f
     }()
 
-    public static func ended(reason: String) -> [String: Any] {
-        ["active": false, "ended": true, "reason": reason]
+    public static func ended(reason: String, vietnamese: Bool) -> [String: Any] {
+        ["active": false, "ended": true, "reason": reason, "lang": lang(vietnamese)]
     }
 
     public static func step(_ u: GuidanceUpdate, vietnamese: Bool, now: Date = Date()) -> [String: Any] {
-        let km = String(format: "%.1f", u.remainingDistance / 1000)
+        var km = String(format: "%.1f", u.remainingDistance / 1000)
+        if vietnamese { km = km.replacingOccurrences(of: ".", with: ",") }  // "8,4 km"
         let minutes = max(1, Int((u.remainingTime / 60).rounded()))
         let arrive = etaFormatter.string(from: now.addingTimeInterval(u.remainingTime))
         return [
             "active": true,
+            "lang": lang(vietnamese),
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,
             "distance": Int(u.distanceToManeuver.rounded()),
             "instruction": watchText(u.maneuver.instruction),
