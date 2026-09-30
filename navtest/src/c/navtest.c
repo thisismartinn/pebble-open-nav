@@ -516,7 +516,9 @@ static void prv_window_load(Window *window) {
   Layer *root = window_get_root_layer(window);
   const GRect b = layer_get_bounds(root);
 #ifdef PBL_ROUND
-  if (b.size.w >= 260) s_layout = (Layout){ 2, 22, 40, 90, 130, 140, 8 };  // getafix
+  // getafix; the band text sits higher than Figma's centre (bottom padding 40, not 8)
+  // because the circle narrows towards the bottom (designer's request).
+  if (b.size.w >= 260) s_layout = (Layout){ 2, 22, 40, 90, 130, 140, 40 };
   else s_layout = (Layout){ 8, 24, 40, 72, 112, 112, 14 };                 // chalk: getafix scaled
 #else
   if (b.size.h < 200) s_layout = (Layout){ 2, 0, 20, 65, 85, 140, 8 };  // asterix
