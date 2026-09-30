@@ -5,3 +5,4 @@ navapp/build/
 navapp/*.xcodeproj
 .DS_Store
 navtest/.lock-waf*
+release/
