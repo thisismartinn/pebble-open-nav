@@ -25,14 +25,17 @@ Then one of:
 | idle | `active: false` |
 | routing | `active: false, routing: true` |
 | ended | `active: false, ended: true, arrived: bool` (true: reached the destination; false: stopped on the phone) |
-| step | `active: true, maneuver: int, distance: int, instruction: string, remainM: int, remainS: int, speed: number, fixTime: number` |
+| step | `active: true, stepId: int, maneuver: int, distance: int, instruction: string, remainM: int, remainS: int, speed: number, fixTime: number` |
 
 Step fields:
+- `stepId`: identifies the step: `routeGeneration × 1000 + maneuverIndex`. The generation goes up with each
+  new route or reroute. The watch treats a change as a new step, even when two turns have the same text.
 - `maneuver`: 1 straight, 2 left, 3 right, 4 slight left, 5 slight right, 6 U-turn, 7 arrive.
 - `distance`: metres from the GPS fix to the next maneuver, **at `fixTime`**.
 - `instruction`: at most 90 UTF-8 bytes, cut on a character boundary, no trailing full stop.
 - `remainM` / `remainS`: metres / seconds to the destination at `fixTime`.
-- `speed`: m/s along the route (≥ 0; 0 when unknown or standing still).
+- `speed`: m/s **along the route** towards the next maneuver (≥ 0; 0 when unknown, standing still, or
+  moving away from the route).
 - `fixTime`: Unix time in **milliseconds** of the GPS fix these numbers come from.
 
 ## 2. AppMessage keys (JS ↔ watch)
@@ -44,6 +47,7 @@ Phone → watch (every message carries `Lang`, `Theme`, `ThemeAuto` once the nav
 
 | key | type | when |
 |---|---|---|
+| `StepId` | int32 | step (see `stepId`) |
 | `Maneuver` | int32 | step |
 | `Distance` | int32 m | step (at the fix) |
 | `Instruction` | cstring | step |
