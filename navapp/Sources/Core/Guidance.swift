@@ -41,10 +41,18 @@ public enum WatchManeuver: Int, Sendable {
 
 public struct GuidanceUpdate: Sendable {
     public let maneuver: ValhallaManeuver
+    /// Index of `maneuver` in the route's maneuvers.
+    public let maneuverIndex: Int
     public let distanceToManeuver: Double
     public let remainingDistance: Double
     public let remainingTime: Double
     public let distanceFromRoute: Double
+    /// Distance along the route of the snapped fix, in metres.
+    public let along: Double
+    /// Speed along the route in m/s, 0 when unknown or standing still.
+    public let speed: Double
+    /// When the GPS fix these numbers come from was taken.
+    public let fixTime: Date
     public let arrived: Bool
     public let needsReroute: Bool
 }
@@ -57,21 +65,45 @@ public final class Guidance {
     public var offRouteDistance = 40.0
     public var offRouteFixes = 3
 
-    /// How far ahead along the route a fix may snap between two updates.
+    /// How far ahead along the route a fix may snap between two updates, on top of
+    /// the distance expected from the speed and the time since the last fix.
     public var maxJumpAhead = 200.0
 
+    /// Speed along the route in m/s. Carry it over to the guidance for a new route
+    /// after a reroute, so the watch keeps predicting.
+    public var speed = 0.0
+
     private var along = 0.0
+    /// Dead-reckoned position when the snapped one has fallen well behind it.
+    private var predicted = 0.0
+    private var lastTime: Date?
+    /// Recent (time, along) pairs for estimating the speed when the GPS has none.
+    private var history: [(time: Date, along: Double)] = []
     private var offRouteCount = 0
 
     public init(route: Route) {
         self.route = route
     }
 
-    /// - Parameter course: direction of travel in degrees from north, when known.
-    ///   Used to avoid snapping onto the opposite carriageway of a divided road.
-    public func update(_ location: Coordinate, accuracy: Double = 10, course: Double? = nil) -> GuidanceUpdate? {
+    /// - Parameters:
+    ///   - course: direction of travel in degrees from north, when known.
+    ///     Used to avoid snapping onto the opposite carriageway of a divided road.
+    ///   - speed: the GPS speed in m/s, when valid. Otherwise the speed is estimated
+    ///     from progress along the route.
+    ///   - time: when the fix was taken.
+    public func update(_ location: Coordinate, accuracy: Double = 10, course: Double? = nil,
+                       speed gpsSpeed: Double? = nil, time: Date = Date()) -> GuidanceUpdate? {
         let shape = route.shape, cum = route.cumulative
         guard shape.count >= 2, route.maneuvers.count >= 2 else { return nil }
+
+        // Where we expect to be by now, from the speed. After a GPS gap the fix may be
+        // far ahead of where we were, and without this it would be held back (or stuck
+        // beyond the window) until it drifted off the route. Dead reckoning carries on
+        // from `predicted` while the snapped position lags behind it, e.g. held on a
+        // corner of a tight loop, but never more than 60 m ahead of the snapped position.
+        let elapsed = lastTime.map { min(max(time.timeIntervalSince($0), 0), 60) } ?? 0
+        let expected = elapsed * (self.speed + (gpsSpeed ?? self.speed)) / 2
+        let reference = min(max(along, predicted), along + 60) + expected
 
         func facingAway(_ i: Int) -> Bool {
             guard let course, cum[i + 1] - cum[i] > 1 else { return false }
@@ -82,8 +114,8 @@ public final class Guidance {
         }
         // Nearest segment, optionally limited to a stretch of route around where we
         // were last time, so a fix can't jump past an upcoming U-turn onto the way back.
-        // Jumping far ahead also costs a little, so without a heading (slow or
-        // stopped) the fix still prefers staying on the stretch it was on.
+        // Jumping further ahead than expected also costs a little, so without a
+        // heading (slow or stopped) the fix still prefers staying on the stretch it was on.
         func nearest(from lower: Double?, to upper: Double?, penalizeJumps: Bool) -> (seg: Int, t: Double, d: Double) {
             var best = (seg: 0, t: 0.0, d: Double.greatestFiniteMagnitude)
             var bestScore = Double.greatestFiniteMagnitude
@@ -91,7 +123,7 @@ public final class Guidance {
                 if let lower, cum[i + 1] < lower { continue }
                 if let upper, cum[i] > upper { break }
                 let p = project(location, onto: shape[i], shape[i + 1])
-                let jump = cum[i] + p.t * (cum[i + 1] - cum[i]) - along
+                let jump = cum[i] + p.t * (cum[i + 1] - cum[i]) - reference
                 var score = p.distance + (facingAway(i) ? 1000 : 0)
                 if penalizeJumps, jump > 30 { score += (jump - 30) * 0.5 }
                 if score < bestScore {
@@ -101,11 +133,19 @@ public final class Guidance {
             }
             return best
         }
-        var best = nearest(from: along - 30, to: along + maxJumpAhead, penalizeJumps: true)
+        // The first fix has nothing to stay close to: the rider may be well past the
+        // route's start by the time the route arrives.
+        var best = nearest(from: along - 30, to: max(along + maxJumpAhead, reference + expected / 2 + 50),
+                           penalizeJumps: lastTime != nil)
+        var reacquired = false
         if best.d > offRouteDistance {
             best = nearest(from: nil, to: nil, penalizeJumps: false)  // re-acquire anywhere, e.g. after a detour
+            reacquired = true
         }
         along = cum[best.seg] + best.t * (cum[best.seg + 1] - cum[best.seg])
+        predicted = along < reference - 30 && !reacquired ? reference : along
+        updateSpeed(gpsSpeed, time: time, restart: reacquired || elapsed > 30)
+        lastTime = time
 
         // Next maneuver ahead of us (index 0 is the "start" instruction).
         let maneuvers = route.maneuvers
@@ -126,13 +166,31 @@ public final class Guidance {
 
         return GuidanceUpdate(
             maneuver: next,
+            maneuverIndex: nextIndex,
             distanceToManeuver: toManeuver,
             remainingDistance: remaining,
             remainingTime: route.totalLength > 0 ? route.totalTime * remaining / route.totalLength : 0,
             distanceFromRoute: best.d,
+            along: along,
+            speed: speed,
+            fixTime: time,
             arrived: arrived,
             needsReroute: offRouteCount >= offRouteFixes
         )
+    }
+
+    /// The GPS speed when there is one. Otherwise progress along the route over the
+    /// last few seconds, which averages out most of the GPS jitter, lightly smoothed.
+    private func updateSpeed(_ gpsSpeed: Double?, time: Date, restart: Bool) {
+        if restart { history.removeAll() }
+        history.append((time, along))
+        history.removeAll { time.timeIntervalSince($0.time) > 5 }
+        if let gpsSpeed {
+            speed = max(0, gpsSpeed)
+        } else if let first = history.first, time.timeIntervalSince(first.time) >= 2 {
+            let measured = max(0, (along - first.along) / time.timeIntervalSince(first.time))
+            speed += (measured - speed) * 0.5
+        }
     }
 }
 
@@ -169,32 +227,24 @@ public enum WatchStep {
         ctx.fields.merging(["active": false, "routing": true]) { $1 }
     }
 
-    /// Fixed 24-hour Latin digits whatever the phone's region and 12/24-hour setting,
-    /// since the watch fonts only cover Latin text.
-    private static let etaFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "HH:mm"
-        return f
-    }()
-
-    public static func ended(reason: String, _ ctx: WatchContext) -> [String: Any] {
-        ctx.fields.merging(["active": false, "ended": true, "reason": reason]) { $1 }
+    /// The trip is over. `arrived` false: stopped on the phone.
+    public static func ended(arrived: Bool, _ ctx: WatchContext) -> [String: Any] {
+        ctx.fields.merging(["active": false, "ended": true, "arrived": arrived]) { $1 }
     }
 
-    public static func step(_ u: GuidanceUpdate, _ ctx: WatchContext, now: Date = Date()) -> [String: Any] {
-        let vietnamese = ctx.vietnamese
-        var km = String(format: "%.1f", u.remainingDistance / 1000)
-        if vietnamese { km = km.replacingOccurrences(of: ".", with: ",") }  // "8,4 km"
-        let minutes = max(1, Int((u.remainingTime / 60).rounded()))
-        let arrive = etaFormatter.string(from: now.addingTimeInterval(u.remainingTime))
-        return ctx.fields.merging([
+    /// The next step, with every number as of the GPS fix (`fixTime`) so the watch
+    /// can count down from there.
+    public static func step(_ u: GuidanceUpdate, _ ctx: WatchContext) -> [String: Any] {
+        ctx.fields.merging([
             "active": true,
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,
             "distance": Int(u.distanceToManeuver.rounded()),
             "instruction": watchText(u.maneuver.instruction),
-            "remaining": vietnamese ? "Còn \(km) km" : "\(km) km left",
-            "eta": vietnamese ? "\(minutes) phút · Đến \(arrive)" : "\(minutes) min · Arrive \(arrive)",
+            "remainM": Int(u.remainingDistance.rounded()),
+            "remainS": Int(u.remainingTime.rounded()),
+            // cm/s precision as a Decimal, so the JSON says 9.37 rather than 9.3699999999999992
+            "speed": Decimal(Int((max(0, u.speed) * 100).rounded())) / 100,
+            "fixTime": Int64((u.fixTime.timeIntervalSince1970 * 1000).rounded()),
         ]) { $1 }
     }
 

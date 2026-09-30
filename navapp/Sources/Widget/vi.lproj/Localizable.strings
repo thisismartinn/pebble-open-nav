@@ -1,0 +1,6 @@
+/* Live Activity strings (widget extension). Keys are the English text used in the Swift code. */
+
+"You have arrived" = "Bạn đã tới nơi";
+"Navigation Ended" = "Đã kết thúc chỉ đường";
+/* Arrival time and remaining distance, e.g. "Đến 19:25 · 8,4 km". */
+"ETA %@ · %@" = "Đến %1$@ · %2$@";

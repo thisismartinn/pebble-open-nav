@@ -5,7 +5,7 @@ import Foundation
 /// local server the Pebble watchapp polls. GPS runs only during a trip.
 /// Whether the Pebble watchapp is polling, for the Pebble section of the UI.
 struct WatchLinkStatus: Equatable {
-    /// The watch checked in within the last 10 s.
+    /// The watch checked in within the last 10s.
     var connected = false
     /// Last check-in, if any.
     var lastCheckIn: Date?
@@ -33,7 +33,7 @@ final class NavigationController: NSObject, ObservableObject {
     private enum WatchPayload {
         case idle, routing
         case step(GuidanceUpdate)
-        case ended(String)
+        case ended(arrived: Bool)
     }
 
     @Published var phase: Phase = .idle
@@ -49,7 +49,6 @@ final class NavigationController: NSObject, ObservableObject {
     /// True between starting a trip and the first accurate fix to route from.
     @Published var awaitingFix = false
     @Published var preciseLocationOff = false
-    @Published var watchStatus = ""
     @Published var watchLink = WatchLinkStatus()
     /// The current or last trip's log (GPS fixes, guidance, watch polls), to share after a ride.
     @Published var tripLogURL: URL?
@@ -65,6 +64,7 @@ final class NavigationController: NSObject, ObservableObject {
     private let manager = CLLocationManager()
     private let server = StepServer()
     private var guidance: Guidance?
+    private var tripLog: TripLog?
     private var destination: OpenMapServices.Place?
     /// Identifies the current trip, so a route request from an earlier trip
     /// that finishes late is ignored.
@@ -78,7 +78,7 @@ final class NavigationController: NSObject, ObservableObject {
     private var sentLight: Bool?
 
     /// After a trip ends, keep running this long so the watch (polling every
-    /// 3 s) can still fetch "ended" with the phone locked. Stopping GPS lets
+    /// 3s) can still fetch "ended" with the phone locked. Stopping GPS lets
     /// iOS suspend the app.
     private static let endedGracePeriod: UInt64 = 15_000_000_000
 
@@ -89,8 +89,12 @@ final class NavigationController: NSObject, ObservableObject {
         server.onStateChange = { [weak self] state in
             Task { @MainActor in self?.serverStateChanged(state) }
         }
+        server.onPoll = { [weak self] time, gap in
+            Task { @MainActor in self?.tripLog?.poll(time: time, gap: gap) }
+        }
         publish(.idle)
         server.start()
+        LiveActivityController.shared.endLeftovers()  // e.g. the app was killed mid-trip
         refreshWatchStatus()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -132,6 +136,9 @@ final class NavigationController: NSObject, ObservableObject {
         tripID = UUID()
         phase = .routing
         awaitingFix = true
+        tripLog?.close("replaced by a new trip")
+        tripLog = TripLog(destination: place.name, detail: costing.rawValue)
+        tripLogURL = tripLog?.url
         server.start()
         server.resetStats()
         publish(.routing)
@@ -151,6 +158,8 @@ final class NavigationController: NSObject, ObservableObject {
         publish(.idle)
         LiveActivityController.shared.end(arrived: false)
         stopGPS()
+        tripLog?.event("end", "cancelled")
+        closeTripLog()
     }
 
     func stop() {
@@ -181,13 +190,18 @@ final class NavigationController: NSObject, ObservableObject {
                 to: destination.coordinate, costing: costing,
                 language: vietnamese ? "vi-VN" : "en-US")
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
+            tripLog?.event(guidance == nil ? "route" : "reroute", String(
+                format: "%.0f m, %.0fs, %d maneuvers", route.totalLength, route.totalTime, route.maneuvers.count))
             self.route = route
-            guidance = Guidance(route: route)
+            let next = Guidance(route: route)
+            next.speed = guidance?.speed ?? 0  // keep the watch predicting across a reroute
+            guidance = next
             if phase == .routing { LiveActivityController.shared.start(destinationName: destinationName ?? "") }
             phase = .navigating
             if let location { handle(location) }
         } catch {
             guard trip == tripID else { return }
+            tripLog?.event("route failed", error.localizedDescription)
             if phase == .routing {
                 errorMessage = error.localizedDescription
                 cancel()
@@ -196,17 +210,30 @@ final class NavigationController: NSObject, ObservableObject {
         }
     }
 
+    /// Logs a fix as Core Location delivered it, before `handle` decides whether to use it.
+    private func log(_ fix: CLLocation) {
+        guard tripID != nil else { return }
+        tripLog?.fix(time: fix.timestamp, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude,
+                     accuracy: fix.horizontalAccuracy, speed: fix.speed, course: fix.course,
+                     detail: isUsable(fix, maxAge: 10) ? "" : "skipped")
+    }
+
     private func handle(_ fix: CLLocation) {
         location = fix
-        if phase == .routing, awaitingFix, isUsable(fix, maxAge: 10) {
+        let usable = isUsable(fix, maxAge: 10)
+        if phase == .routing, awaitingFix, usable {
             routeFrom(fix)
             return
         }
-        guard phase == .navigating, let guidance, isUsable(fix, maxAge: 10) else { return }
+        guard phase == .navigating, let guidance, usable else { return }
         let here = Coordinate(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
         let course = fix.course >= 0 && fix.speed > 2 && fix.courseAccuracy >= 0 && fix.courseAccuracy < 45
             ? fix.course : nil
-        guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy, course: course) else { return }
+        // Doppler speed from the GPS; without it guidance estimates it from progress along the route.
+        let speed = fix.speed >= 0 && fix.speedAccuracy >= 0 && fix.speedAccuracy < 3 ? fix.speed : nil
+        guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy, course: course,
+                                      speed: speed, time: fix.timestamp) else { return }
+        tripLog?.guidance(u)
         update = u
         if u.arrived {
             finish(arrived: true)
@@ -216,6 +243,7 @@ final class NavigationController: NSObject, ObservableObject {
         LiveActivityController.shared.update(u, vietnamese: vietnamese)
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
             lastReroute = Date()
+            tripLog?.event("reroute requested")
             let trip = tripID
             Task { await fetchRoute(from: fix.coordinate, trip: trip) }
         }
@@ -223,7 +251,8 @@ final class NavigationController: NSObject, ObservableObject {
 
     private func finish(arrived: Bool) {
         let reason = arrived ? String(localized: "You have arrived") : String(localized: "Stopped on phone")
-        publish(.ended(reason))
+        publish(.ended(arrived: arrived))
+        tripLog?.event("end", arrived ? "arrived" : "stopped on phone")
         LiveActivityController.shared.end(arrived: arrived)
         phase = .ended(reason)
         guidance = nil
@@ -234,7 +263,14 @@ final class NavigationController: NSObject, ObservableObject {
             try? await Task.sleep(nanoseconds: Self.endedGracePeriod)
             guard let self, !Task.isCancelled, self.tripID == nil else { return }
             self.stopGPS()
+            self.closeTripLog()
         }
+    }
+
+    /// Stops logging; the file stays for sharing (`tripLogURL`).
+    private func closeTripLog() {
+        tripLog?.close()
+        tripLog = nil
     }
 
     private func isUsable(_ fix: CLLocation, maxAge: TimeInterval) -> Bool {
@@ -288,12 +324,15 @@ final class NavigationController: NSObject, ObservableObject {
         let light = watchIsLight
         sentLight = light
         let ctx = WatchContext(vietnamese: vietnamese, light: light, automaticTheme: watchTheme == .automatic)
+        let body: [String: Any]
         switch payload {
-        case .idle: server.publish(WatchStep.idle(ctx))
-        case .routing: server.publish(WatchStep.routing(ctx))
-        case .step(let u): server.publish(WatchStep.step(u, ctx))
-        case .ended(let reason): server.publish(WatchStep.ended(reason: reason, ctx))
+        case .idle: body = WatchStep.idle(ctx)
+        case .routing: body = WatchStep.routing(ctx)
+        case .step(let u): body = WatchStep.step(u, ctx)
+        case .ended(let arrived): body = WatchStep.ended(arrived: arrived, ctx)
         }
+        server.publish(body)
+        tripLog?.publish(body)
     }
 
     /// Automatic: light between sunrise and sunset where you are (6:00–18:00
@@ -322,21 +361,21 @@ final class NavigationController: NSObject, ObservableObject {
     private func refreshWatchStatus() {
         let stats = server.pollStats
         guard let last = stats.last else {
-            watchStatus = String(localized: "Not connected yet. Open PebbleOpenNav on your Pebble.")
+            watchLink = WatchLinkStatus()
             return
         }
         watchLink = WatchLinkStatus(connected: Date().timeIntervalSince(last) < 10, lastCheckIn: last,
                                     count: stats.count, longestGap: stats.maxGap)
-        let ago = Int(Date().timeIntervalSince(last))
-        let gap = Int(stats.maxGap)
-        watchStatus = String(localized: "Checked in \(ago) s ago · \(stats.count) times · longest gap \(gap) s")
     }
 }
 
 extension NavigationController: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let fix = locations.last else { return }
-        Task { @MainActor in self.handle(fix) }
+        Task { @MainActor in
+            self.log(fix)
+            self.handle(fix)
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

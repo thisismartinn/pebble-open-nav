@@ -62,30 +62,31 @@ Task {
             route = try await OpenMapServices.route(from: from, to: to, costing: costing,
                                                     language: vietnamese ? "vi-VN" : "en-US")
         }
-        print(String(format: "Route: %.0f m, %.0f s, %d maneuvers, %d shape points",
+        print(String(format: "Route: %.0f m, %.0fs, %d maneuvers, %d shape points",
                      route.totalLength, route.totalTime, route.maneuvers.count, route.shape.count))
         let guidance = Guidance(route: route)
         var travelled = 0.0
         while true {
             let fix = position(on: route, at: min(travelled, route.totalLength))
-            guard let u = guidance.update(fix) else { break }
+            // The simulated speed stands in for the GPS speed; the fix is taken now.
+            guard let u = guidance.update(fix, speed: speed, time: Date()) else { break }
             if u.arrived {
-                server.publish(WatchStep.ended(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived", ctx))
-                print("Arrived. Serving \"ended\" for 20 s.")
+                server.publish(WatchStep.ended(arrived: true, ctx))
+                print("Arrived. Serving \"ended\" for 20s.")
                 break
             }
             let step = WatchStep.step(u, ctx)
             server.publish(step)
             let stats = server.pollStats
-            print(String(format: "%5.0f m  next in %4.0f m  off-route %4.1f m  polls %d  | %@",
-                         travelled, u.distanceToManeuver, u.distanceFromRoute, stats.count,
-                         step["instruction"] as? String ?? ""))
+            print(String(format: "%5.0f m  next in %4.0f m  off-route %4.1f m  %4.0f m / %4.0fs left  polls %d  | %@",
+                         travelled, u.distanceToManeuver, u.distanceFromRoute, u.remainingDistance,
+                         u.remainingTime, stats.count, step["instruction"] as? String ?? ""))
             travelled += speed
             try await Task.sleep(nanoseconds: 1_000_000_000)
         }
         try await Task.sleep(nanoseconds: 20_000_000_000)
         let stats = server.pollStats
-        print(String(format: "Watch polled %d times, longest gap %.1f s", stats.count, stats.maxGap))
+        print(String(format: "Watch polled %d times, longest gap %.1fs", stats.count, stats.maxGap))
         exit(0)
     } catch {
         print("Error: \(error.localizedDescription)")

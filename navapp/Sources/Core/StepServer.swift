@@ -14,6 +14,13 @@ public final class StepServer: @unchecked Sendable {
 
     /// Called on the server's queue whenever the listener's state changes.
     public var onStateChange: (@Sendable (State) -> Void)?
+    /// Called on the server's queue for every GET /step, with the time since the
+    /// previous one (nil for the first).
+    public var onPoll: (@Sendable (_ time: Date, _ gap: TimeInterval?) -> Void)?
+
+    /// A longer gap between polls means the watchapp was closed in between, so the
+    /// next poll starts a new session.
+    public static let sessionGap: TimeInterval = 30
 
     private let queue = DispatchQueue(label: "StepServer")
     private let lock = NSLock()
@@ -33,20 +40,38 @@ public final class StepServer: @unchecked Sendable {
         lock.unlock()
     }
 
-    /// When the watch last polled, the longest gap between polls, and the count.
-    /// A growing gap with the phone locked means iOS suspended the Pebble app.
+    /// When the watch last polled, and the longest gap between polls and their count
+    /// in the current watchapp session. A growing gap with the phone locked means iOS
+    /// suspended the Pebble app.
     public var pollStats: (last: Date?, maxGap: TimeInterval, count: Int) {
         lock.lock()
         defer { lock.unlock() }
         return (lastRequest, maxGap, requests)
     }
 
+    /// Starts counting afresh, e.g. for a new trip. Keeps the last poll time, so the
+    /// watch still shows as connected.
     public func resetStats() {
         lock.lock()
-        lastRequest = nil
         maxGap = 0
         requests = 0
         lock.unlock()
+    }
+
+    /// Counts a poll and returns the time since the previous one, and the body to serve.
+    func recordPoll(at now: Date) -> (gap: TimeInterval?, body: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        let gap = lastRequest.map { now.timeIntervalSince($0) }
+        if let gap, gap > Self.sessionGap {
+            requests = 0
+            maxGap = 0
+        } else if let gap {
+            maxGap = max(maxGap, gap)
+        }
+        lastRequest = now
+        requests += 1
+        return (gap, body)
     }
 
     /// Starts listening if not already. Safe to call repeatedly, e.g. when the
@@ -112,13 +137,9 @@ public final class StepServer: @unchecked Sendable {
             let path = request.split(separator: " ").dropFirst().first.map(String.init) ?? ""
             let response: Data
             if path.hasPrefix("/step") {
-                self.lock.lock()
                 let now = Date()
-                if let last = self.lastRequest { self.maxGap = max(self.maxGap, now.timeIntervalSince(last)) }
-                self.lastRequest = now
-                self.requests += 1
-                let body = self.body
-                self.lock.unlock()
+                let (gap, body) = self.recordPoll(at: now)
+                self.onPoll?(now, gap)
                 response = Self.http(status: "200 OK", body: body)
             } else {
                 response = Self.http(status: "404 Not Found", body: Data())

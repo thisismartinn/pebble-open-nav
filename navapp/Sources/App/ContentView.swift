@@ -17,7 +17,8 @@ struct ContentView: View {
     static let collapsed = PresentationDetent.fraction(0.3)
 
     var body: some View {
-        Map(position: $camera) {
+        // Apple's places are tappable (only while idle); they open the place card.
+        Map(position: $camera, selection: $search.selectedFeature) {
             UserAnnotation()
             if let route = nav.route {
                 MapPolyline(coordinates: route.shape.map(\.location2D))
@@ -27,11 +28,20 @@ struct ContentView: View {
                 }
             }
         }
+        .mapStyle(.standard(pointsOfInterest: .all, showsTraffic: true))
+        .mapFeatureSelectionDisabled { feature in
+            nav.phase != .idle || feature.kind != .pointOfInterest
+        }
         .mapControls {
             MapUserLocationButton()
             MapCompass()
             MapScaleView()
         }
+        .onChange(of: search.selectedFeature) { _, feature in
+            search.show(feature)
+            if feature != nil, detent == .large { detent = .medium }
+        }
+        .onReceive(nav.$location) { search.near = $0 }
         .sheet(isPresented: .constant(true)) {
             TripSheet(nav: nav, search: search, detent: $detent)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
@@ -68,7 +78,8 @@ private struct TripSheet: View {
         NavigationStack {
             Group {
                 switch nav.phase {
-                case .idle: searchList
+                case .idle:
+                    if let card = search.card { placeCard(card) } else { searchList }
                 case .routing: routingList
                 case .navigating: guidanceList
                 case .ended(let reason): ended(reason)
@@ -79,18 +90,18 @@ private struct TripSheet: View {
         }
         // Alerts must come from the sheet: the view under a presented sheet can't show one.
         .alert("Something Went Wrong", isPresented: Binding(
-            get: { nav.errorMessage != nil },
-            set: { if !$0 { nav.errorMessage = nil } }
+            get: { nav.errorMessage != nil || search.errorMessage != nil },
+            set: { if !$0 { nav.errorMessage = nil; search.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(nav.errorMessage ?? "")
+            Text(nav.errorMessage ?? search.errorMessage ?? "")
         }
     }
 
     private var title: String {
         switch nav.phase {
-        case .idle: String(localized: "PebbleOpenNav")
+        case .idle: search.card == nil ? String(localized: "PebbleOpenNav") : ""
         case .routing, .navigating: nav.destinationName ?? String(localized: "Route")
         case .ended: ""
         }
@@ -102,27 +113,36 @@ private struct TripSheet: View {
         List {
             if search.searching {
                 ProgressView().frame(maxWidth: .infinity)
-            } else if !search.results.isEmpty {
-                Section("Results") {
-                    ForEach(search.results) { place in
-                        Button {
-                            search.reset()
-                            nav.start(to: place)
-                        } label: {
-                            PlaceRow(place: place)
+            } else if search.showsResults {
+                if !search.results.isEmpty {
+                    Section("Results") { placeButtons(search.results) }
+                }
+                addressSection
+                if search.results.isEmpty, search.addressResults.isEmpty, let searched = search.lastSearch {
+                    ContentUnavailableView.search(text: searched)
+                }
+            } else {
+                if !search.suggestions.isEmpty {
+                    Section {
+                        ForEach(search.suggestions, id: \.self) { suggestion in
+                            Button {
+                                Task {
+                                    guard let place = await search.resolve(suggestion) else { return }
+                                    search.reset()
+                                    nav.start(to: place)
+                                }
+                            } label: {
+                                SuggestionRow(completion: suggestion)
+                            }
+                            .tint(.primary)
                         }
-                        .tint(.primary)
                     }
                 }
-            } else if let searched = search.lastSearch, searched == search.query {
-                ContentUnavailableView.search(text: searched)
+                addressSection
             }
 
             Section("Route Options") {
-                Picker("Travel By", selection: $nav.costing) {
-                    ForEach(OpenMapServices.Costing.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
+                TransportPicker(costing: $nav.costing)
             }
             precisionSection
             watchSection
@@ -131,10 +151,7 @@ private struct TripSheet: View {
         .searchable(text: $search.query, isPresented: $searchActive,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search for a place or address")
-        .onSubmit(of: .search) {
-            search.near = nav.location
-            search.search()
-        }
+        .onSubmit(of: .search) { search.search() }
         .onChange(of: searchActive) { _, active in
             if active {
                 detent = .large
@@ -142,6 +159,40 @@ private struct TripSheet: View {
                 detent = .medium  // search cancelled: show the map again
             }
         }
+    }
+
+    /// Photon results for a query that starts with a house number.
+    @ViewBuilder private var addressSection: some View {
+        if !search.addressResults.isEmpty {
+            Section("Addresses from OpenStreetMap") { placeButtons(search.addressResults) }
+        }
+    }
+
+    private func placeButtons(_ places: [OpenMapServices.Place]) -> some View {
+        ForEach(places) { place in
+            Button {
+                search.reset()
+                nav.start(to: place)
+            } label: {
+                PlaceRow(place: place)
+            }
+            .tint(.primary)
+        }
+    }
+
+    private func placeCard(_ card: PlaceDetails) -> some View {
+        let here = nav.location
+        let there = CLLocation(latitude: card.coordinate.latitude, longitude: card.coordinate.longitude)
+        return PlaceCard(details: card,
+                         distance: here.map { Format.distance($0.distance(from: there)) },
+                         costing: $nav.costing,
+                         onGo: {
+                             let place = card.place
+                             search.reset()
+                             nav.start(to: place)
+                         },
+                         onClose: { search.dismissCard() })
+            .sheetGlassListBackground(detent)
     }
 
     // MARK: Trip
@@ -236,7 +287,10 @@ private struct TripSheet: View {
 
     private var watchSection: some View {
         Section {
-            Label(nav.watchStatus, systemImage: "applewatch")
+            // Re-rendered every second so "5s ago" keeps counting.
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                WatchLinkRow(link: nav.watchLink, now: context.date)
+            }
             Picker(selection: $nav.watchTheme) {
                 ForEach(WatchTheme.allCases) { Text($0.label).tag($0) }
             } label: {
@@ -251,11 +305,103 @@ private struct TripSheet: View {
                     Label("Install Watchapp", systemImage: "square.and.arrow.up")
                 }
             }
+            if let log = nav.tripLogURL {
+                ShareLink(item: log) {
+                    Label("Share Trip Log", systemImage: "doc.text")
+                }
+            }
         } header: {
             Text("Pebble")
         } footer: {
             Text("Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.")
         }
+    }
+}
+
+/// Whether the Pebble watchapp is polling: "Connected", checked in 5s ago • 62 times.
+private struct WatchLinkRow: View {
+    let link: WatchLinkStatus
+    let now: Date
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                if link.connected {
+                    Text("Connected")
+                        .font(.headline)
+                    Group {
+                        if let last = link.lastCheckIn {
+                            Text(checkIns(ago: Format.ago(last, now: now)))
+                        }
+                        Text("Longest gap: \(Format.elapsed(link.longestGap))")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                } else {
+                    Text("Not connected")
+                        .font(.headline)
+                    Text("Open the app on your Pebble to continue")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } icon: {
+            Image(systemName: "applewatch")
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func checkIns(ago: String) -> String {
+        link.count == 1
+            ? String(localized: "Checked in \(ago) • 1 time")
+            : String(localized: "Checked in \(ago) • \(link.count) times")
+    }
+}
+
+/// Apple Maps type-ahead suggestion, with the typed part in bold.
+private struct SuggestionRow: View {
+    let completion: MKLocalSearchCompletion
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Self.highlighted(completion.title, completion.titleHighlightRanges))
+                if !completion.subtitle.isEmpty {
+                    Text(completion.subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } icon: {
+            Image(systemName: "mappin.circle.fill")
+                .foregroundStyle(.red)
+        }
+    }
+
+    private static func highlighted(_ text: String, _ ranges: [NSValue]) -> AttributedString {
+        var result = AttributedString(text)
+        for value in ranges {
+            guard let range = Range(value.rangeValue, in: text),
+                  let attributed = Range(range, in: result) else { continue }
+            result[attributed].inlinePresentationIntent = .stronglyEmphasized
+        }
+        return result
+    }
+}
+
+/// Travel mode as SF Symbols, like Apple Maps; VoiceOver reads the mode's name.
+struct TransportPicker: View {
+    @Binding var costing: OpenMapServices.Costing
+
+    var body: some View {
+        Picker("Travel By", selection: $costing) {
+            ForEach(OpenMapServices.Costing.allCases, id: \.self) { mode in
+                Image(systemName: mode.symbolName)
+                    .accessibilityLabel(mode.label)
+                    .tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 }
 
@@ -312,6 +458,23 @@ private enum Format {
         Duration.seconds(max(60, seconds))
             .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
     }
+
+    /// "38s", "2min", "6h". Seconds never take a space before the unit, in
+    /// either language, so these don't use the system duration formatter.
+    static func elapsed(_ seconds: TimeInterval) -> String {
+        let s = max(0, Int(seconds))
+        switch s {
+        case ..<60: return String(localized: "\(s)s")
+        case ..<3600: return String(localized: "\(s / 60)min")
+        default: return String(localized: "\(s / 3600)h")
+        }
+    }
+
+    /// "5s ago", "2min ago", "6h ago".
+    static func ago(_ date: Date, now: Date = Date()) -> String {
+        let elapsed = elapsed(now.timeIntervalSince(date))
+        return String(localized: "\(elapsed) ago")
+    }
 }
 
 private extension Coordinate {
@@ -343,6 +506,15 @@ extension WatchTheme {
 }
 
 extension OpenMapServices.Costing {
+    var symbolName: String {
+        switch self {
+        case .motorbike: "scooter"
+        case .car: "car.fill"
+        case .bicycle: "bicycle"
+        case .walk: "figure.walk"
+        }
+    }
+
     var label: String {
         switch self {
         case .motorbike: String(localized: "Motorbike")
