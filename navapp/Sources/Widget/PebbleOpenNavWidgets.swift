@@ -17,16 +17,17 @@ struct PebbleOpenNavWidgets: WidgetBundle {
 struct NavLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: NavActivityAttributes.self) { context in
-            NavLockScreenView(state: context.state, destinationName: context.attributes.destinationName)
+            NavLockScreenView(state: context.state, destinationName: context.attributes.destinationName,
+                              isStale: context.isStale)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: context.state.symbol)
+                    Image(systemName: NavNotice.symbol(context.state, isStale: context.isStale))
                         .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(.tint)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if !context.state.ended {
+                    if NavNotice(state: context.state, isStale: context.isStale) == nil {
                         Text(NavFormat.distance(context.state.distance))
                             .font(.title2.bold())
                             .monospacedDigit()
@@ -34,18 +35,19 @@ struct NavLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     NavExpandedBottomView(state: context.state,
-                                          destinationName: context.attributes.destinationName)
+                                          destinationName: context.attributes.destinationName,
+                                          isStale: context.isStale)
                 }
             } compactLeading: {
-                Image(systemName: context.state.symbol)
+                Image(systemName: NavNotice.symbol(context.state, isStale: context.isStale))
                     .foregroundStyle(.tint)
             } compactTrailing: {
-                if !context.state.ended {
+                if NavNotice(state: context.state, isStale: context.isStale) == nil {
                     Text(NavFormat.distance(context.state.distance))
                         .monospacedDigit()
                 }
             } minimal: {
-                Image(systemName: context.state.symbol)
+                Image(systemName: NavNotice.symbol(context.state, isStale: context.isStale))
                     .foregroundStyle(.tint)
             }
         }

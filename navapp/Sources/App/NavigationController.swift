@@ -32,7 +32,7 @@ final class NavigationController: NSObject, ObservableObject {
     /// setting changes.
     private enum WatchPayload {
         case idle, routing
-        case step(GuidanceUpdate)
+        case step(GuidanceUpdate, routeGeneration: Int)
         case ended(arrived: Bool)
     }
 
@@ -69,6 +69,9 @@ final class NavigationController: NSObject, ObservableObject {
     /// Identifies the current trip, so a route request from an earlier trip
     /// that finishes late is ignored.
     private var tripID: UUID?
+    /// Goes up with every route or reroute accepted, across trips, so the watch's
+    /// step ids never repeat.
+    private var routeGeneration = 0
     private var lastReroute = Date.distantPast
     private var statusTimer: Timer?
     private var shutdownTask: Task<Void, Never>?
@@ -126,6 +129,9 @@ final class NavigationController: NSObject, ObservableObject {
     // MARK: Trip
 
     func start(to place: OpenMapServices.Place) {
+        // Now, while the app is certainly in the foreground: ActivityKit can't start
+        // one from the background, e.g. after the phone is locked during routing.
+        LiveActivityController.shared.begin(destinationName: place.name)
         shutdownTask?.cancel()
         shutdownTask = nil
         destination = place
@@ -179,14 +185,14 @@ final class NavigationController: NSObject, ObservableObject {
     private func routeFrom(_ fix: CLLocation) {
         awaitingFix = false
         let trip = tripID
-        Task { await fetchRoute(from: fix.coordinate, trip: trip) }
+        Task { await fetchRoute(from: fix, trip: trip) }
     }
 
-    private func fetchRoute(from start: CLLocationCoordinate2D, trip: UUID?) async {
+    private func fetchRoute(from fix: CLLocation, trip: UUID?) async {
         guard let trip, trip == tripID, let destination else { return }
         do {
             let route = try await OpenMapServices.route(
-                from: Coordinate(lat: start.latitude, lon: start.longitude),
+                from: Coordinate(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude),
                 to: destination.coordinate, costing: costing,
                 language: vietnamese ? "vi-VN" : "en-US")
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
@@ -195,7 +201,9 @@ final class NavigationController: NSObject, ObservableObject {
             self.route = route
             let next = Guidance(route: route)
             next.speed = guidance?.speed ?? 0  // keep the watch predicting across a reroute
+            next.startTime = fix.timestamp  // the rider has moved on while the route was fetched
             guidance = next
+            routeGeneration += 1
             if phase == .routing { LiveActivityController.shared.start(destinationName: destinationName ?? "") }
             phase = .navigating
             if let location { handle(location) }
@@ -239,13 +247,13 @@ final class NavigationController: NSObject, ObservableObject {
             finish(arrived: true)
             return
         }
-        publish(.step(u))
+        publish(.step(u, routeGeneration: routeGeneration))
         LiveActivityController.shared.update(u, vietnamese: vietnamese)
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
             lastReroute = Date()
             tripLog?.event("reroute requested")
             let trip = tripID
-            Task { await fetchRoute(from: fix.coordinate, trip: trip) }
+            Task { await fetchRoute(from: fix, trip: trip) }
         }
     }
 
@@ -328,7 +336,7 @@ final class NavigationController: NSObject, ObservableObject {
         switch payload {
         case .idle: body = WatchStep.idle(ctx)
         case .routing: body = WatchStep.routing(ctx)
-        case .step(let u): body = WatchStep.step(u, ctx)
+        case .step(let u, let generation): body = WatchStep.step(u, routeGeneration: generation, ctx)
         case .ended(let arrived): body = WatchStep.ended(arrived: arrived, ctx)
         }
         server.publish(body)
@@ -358,14 +366,15 @@ final class NavigationController: NSObject, ObservableObject {
         }
     }
 
+    /// Runs every second. Assigns only on a change: every assignment to a @Published
+    /// property redraws the views observing it, map included.
     private func refreshWatchStatus() {
         let stats = server.pollStats
-        guard let last = stats.last else {
-            watchLink = WatchLinkStatus()
-            return
-        }
-        watchLink = WatchLinkStatus(connected: Date().timeIntervalSince(last) < 10, lastCheckIn: last,
-                                    count: stats.count, longestGap: stats.maxGap)
+        let status = stats.last.map {
+            WatchLinkStatus(connected: Date().timeIntervalSince($0) < 10, lastCheckIn: $0,
+                            count: stats.count, longestGap: stats.maxGap)
+        } ?? WatchLinkStatus()
+        if status != watchLink { watchLink = status }
     }
 }
 

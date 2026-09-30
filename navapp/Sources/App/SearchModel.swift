@@ -69,6 +69,9 @@ final class SearchModel: NSObject, ObservableObject {
 
     private func queryChanged() {
         let text = trimmedQuery
+        // A submitted search is for the old text: drop it and show suggestions again.
+        searchTask?.cancel()
+        searching = false
         addressTask?.cancel()
         guard !text.isEmpty else {
             completer.cancel()
@@ -116,7 +119,8 @@ final class SearchModel: NSObject, ObservableObject {
             async let apple = Self.appleSearch(request)
             async let photon = withPhoton ? Self.photonSearch(text, near: bias) : .success([])
             let (appleResult, photonResult) = await (apple, photon)
-            guard !Task.isCancelled else { return }
+            // Also nothing for a query that changed meanwhile: no stale places, no alert.
+            guard !Task.isCancelled, text == trimmedQuery else { return }
             searching = false
             results = (try? appleResult.get()) ?? []
             addressResults = (try? photonResult.get()) ?? []

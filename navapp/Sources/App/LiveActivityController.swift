@@ -23,10 +23,11 @@ final class LiveActivityController {
     private var activity: Activity<NavActivityAttributes>?
     #endif
 
-    /// A route was found and navigation starts. The activity itself is
-    /// requested with the first guidance update, which follows within a second
-    /// or so, because it needs a step to show.
-    func start(destinationName: String) {
+    /// A trip starts: call while the app is in front, because iOS only starts a
+    /// Live Activity from the foreground. Shows "Finding a route…" until
+    /// `start` and the first guidance update, which can then arrive in the
+    /// background (e.g. the phone was locked while routing).
+    func begin(destinationName: String) {
         self.destinationName = destinationName
         lastSent = nil
         nextAttempt = .distantPast
@@ -34,10 +35,30 @@ final class LiveActivityController {
         activity = nil  // a trip started over another one: its activity goes with the leftovers
         #endif
         endLeftovers()
+        #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
+        request(.routingPlaceholder())
+        #endif
+    }
+
+    /// A route was found and navigation starts. The activity from `begin` is
+    /// kept and the first guidance update, which follows within a second or so,
+    /// replaces its placeholder in place. If `begin` was refused, that update
+    /// requests one instead (only while the app is in front).
+    func start(destinationName: String) {
+        self.destinationName = destinationName
+        lastSent = nil
+        nextAttempt = .distantPast
+        #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
+        if activity?.attributes.destinationName != destinationName {
+            activity = nil  // not this trip's (no `begin`): it goes with the leftovers
+        }
+        #endif
+        endLeftovers()
     }
 
     /// Called on every guidance update (about once a second while moving).
-    /// Sends only when the maneuver or the rounded distance changes, or every 30 s.
+    /// Sends only when the maneuver or the rounded distance changes, or every 30 s,
+    /// which also keeps pushing the stale date forward.
     func update(_ update: GuidanceUpdate, vietnamese: Bool) {
         // `vietnamese` isn't needed: the widget localizes its own texts, and the
         // instruction already comes from Valhalla in the phone language.
@@ -48,12 +69,13 @@ final class LiveActivityController {
             request(state)
             return
         }
-        if let last = lastSent, last.state.symbol == state.symbol, last.state.instruction == state.instruction,
-           last.state.distance == state.distance, Date().timeIntervalSince(last.at) < 30 {
+        if let last = lastSent, !last.state.routing, last.state.symbol == state.symbol,
+           last.state.instruction == state.instruction, last.state.distance == state.distance,
+           Date().timeIntervalSince(last.at) < 30 {
             return
         }
         lastSent = (state, Date())
-        let content = ActivityContent(state: state, staleDate: nil)
+        let content = Self.content(state)
         enqueue { await activity.update(content) }
         #endif
     }
@@ -134,9 +156,17 @@ final class LiveActivityController {
     }
 
     #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
+    /// If no update comes for this long (the app was killed or crashed mid-trip),
+    /// the widget stops showing the last turn as if it were current.
+    private static let staleAfter: TimeInterval = 90
+
+    private static func content(_ state: NavActivityState) -> ActivityContent<NavActivityState> {
+        ActivityContent(state: state, staleDate: Date().addingTimeInterval(staleAfter))
+    }
+
     /// iOS only starts a Live Activity while the app is in the foreground. If it
-    /// was refused (e.g. the phone was locked while routing), this is retried on
-    /// a later update once the app is back in front.
+    /// was refused (e.g. Live Activities are off, or `begin` wasn't called), this
+    /// is retried on a later update once the app is back in front.
     private func request(_ state: NavActivityState) {
         guard let destinationName, Date() >= nextAttempt,
               UIApplication.shared.applicationState == .active else { return }
@@ -146,7 +176,7 @@ final class LiveActivityController {
         }
         do {
             activity = try Activity<NavActivityAttributes>.request(attributes: NavActivityAttributes(destinationName: destinationName),
-                                                                   content: ActivityContent(state: state, staleDate: nil),
+                                                                   content: Self.content(state),
                                                                    pushType: nil)
             lastSent = (state, Date())
         } catch {

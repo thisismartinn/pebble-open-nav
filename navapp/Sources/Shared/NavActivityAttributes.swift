@@ -16,6 +16,16 @@ struct NavActivityState: Codable, Hashable, Sendable {
     /// The trip is over; `arrived` false: stopped on the phone.
     var ended = false
     var arrived = false
+    /// Placeholder while the route is being found: no distance or ETA yet.
+    var routing = false
+
+    /// Shown instead of a maneuver while routing, and when the activity went stale.
+    static let navigationSymbol = "arrow.triangle.turn.up.right.diamond"
+
+    static func routingPlaceholder() -> NavActivityState {
+        NavActivityState(symbol: navigationSymbol, distance: 0, instruction: "", remaining: 0,
+                         arrival: Date(), routing: true)
+    }
 
     static func ended(arrived: Bool) -> NavActivityState {
         NavActivityState(symbol: arrived ? "mappin.circle.fill" : "checkmark.circle.fill",

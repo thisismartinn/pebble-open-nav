@@ -8,9 +8,56 @@ enum NavFormat {
         Measurement(value: Double(metres), unit: UnitLength.meters)
             .formatted(.measurement(width: .abbreviated, usage: .road))
     }
+}
 
-    static func endedTitle(arrived: Bool) -> LocalizedStringKey {
-        arrived ? "You have arrived" : "Navigation Ended"
+/// What the activity shows instead of the next turn: the trip is over, the
+/// route is still being found, or the app stopped updating it (e.g. it was
+/// killed mid-trip), so the last turn may be out of date.
+enum NavNotice {
+    case ended(arrived: Bool)
+    case routing
+    case stale
+
+    /// nil: show the next turn.
+    init?(state: NavActivityState, isStale: Bool) {
+        if state.ended {
+            self = .ended(arrived: state.arrived)
+        } else if isStale {
+            self = .stale
+        } else if state.routing {
+            self = .routing
+        } else {
+            return nil
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .ended(let arrived): arrived ? "You have arrived" : "Navigation Ended"
+        case .routing: "Finding a route…"
+        case .stale: "Open PebbleOpenNav"
+        }
+    }
+
+    /// The maneuver symbol, which would be out of date once stale.
+    static func symbol(_ state: NavActivityState, isStale: Bool) -> String {
+        !state.ended && isStale ? NavActivityState.navigationSymbol : state.symbol
+    }
+}
+
+/// A notice's title over the destination name.
+struct NavNoticeText: View {
+    let notice: NavNotice
+    let destinationName: String
+    var titleFont: Font = .title3.bold()
+
+    var body: some View {
+        Text(notice.title)
+            .font(titleFont)
+        Text(destinationName)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
     }
 }
 
@@ -27,21 +74,17 @@ struct NavTripSummary: View {
 struct NavLockScreenView: View {
     let state: NavActivityState
     let destinationName: String
+    let isStale: Bool
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: state.symbol)
+            Image(systemName: NavNotice.symbol(state, isStale: isStale))
                 .font(.system(size: 48, weight: .semibold))
                 .foregroundStyle(.tint)
                 .frame(minWidth: 56)
-            if state.ended {
+            if let notice = NavNotice(state: state, isStale: isStale) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(NavFormat.endedTitle(arrived: state.arrived))
-                        .font(.title3.bold())
-                    Text(destinationName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    NavNoticeText(notice: notice, destinationName: destinationName)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 2) {
@@ -69,16 +112,12 @@ struct NavLockScreenView: View {
 struct NavExpandedBottomView: View {
     let state: NavActivityState
     let destinationName: String
+    let isStale: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if state.ended {
-                Text(NavFormat.endedTitle(arrived: state.arrived))
-                    .font(.headline)
-                Text(destinationName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            if let notice = NavNotice(state: state, isStale: isStale) {
+                NavNoticeText(notice: notice, destinationName: destinationName, titleFont: .headline)
             } else {
                 Text(state.instruction)
                     .font(.headline)

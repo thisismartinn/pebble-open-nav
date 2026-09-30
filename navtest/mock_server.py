@@ -46,6 +46,7 @@ TOTAL = sum(d for *_, d in ROUTE)
 state = {
     "start": time.time(), "offset": 0.0, "speed": SPEED, "mode": "trip",  # trip | idle | stopped
     "paused": False, "lang": "vi", "theme": "dark", "themeAuto": True,
+    "generation": 1,  # goes up with each /start, like the nav app's route generation
 }
 
 
@@ -69,12 +70,13 @@ def current_step():
     if travelled >= TOTAL:
         return {**common, "active": False, "ended": True, "arrived": True}
     done = 0
-    for maneuver, english, vietnamese, dist in ROUTE:
+    for index, (maneuver, english, vietnamese, dist) in enumerate(ROUTE):
         if travelled < done + dist:
             remaining = TOTAL - travelled
             return {
                 **common,
                 "active": True,
+                "stepId": state["generation"] * 1000 + index,
                 "maneuver": maneuver,
                 "distance": int(done + dist - travelled),
                 "instruction": cut_utf8(vietnamese if state["lang"] == "vi" else english),
@@ -102,7 +104,8 @@ class Handler(BaseHTTPRequestHandler):
             at = float(query.get("at", 0))
             # Routing first, unless starting somewhere along the route.
             routing = float(query.get("routing", 0 if "at" in query else ROUTING_S))
-            state.update(mode="trip", offset=at, start=time.time() + routing)
+            state.update(mode="trip", offset=at, start=time.time() + routing,
+                         generation=state["generation"] + 1)
         elif path == "/stop":
             state["mode"] = "stopped"
         elif path == "/idle":

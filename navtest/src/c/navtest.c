@@ -27,6 +27,7 @@ static GFont s_font14, s_font14b, s_font18b, s_font24b, s_font30;
 
 // The current step, as received. Distance and remaining are at the GPS fix, which
 // was s_age_ms old when the JS got it; s_rx_ms is when the watch got it.
+static int32_t s_step_id;       // from the nav app; a change means a new step (0: not sent)
 static int s_maneuver = M_NONE;
 static int s_distance, s_remain_m, s_remain_s, s_speed_cms, s_age_ms;
 static int64_t s_rx_ms;
@@ -431,9 +432,11 @@ static void prv_show_ended(bool arrived) {
 static void prv_take_step(DictionaryIterator *iter) {
   Tuple *t;
   const int old_maneuver = s_trip ? s_maneuver : M_NONE;
+  const int32_t old_step_id = s_step_id;
   char old_instr[sizeof(s_instr)];
   strncpy(old_instr, s_instr, sizeof(old_instr));
 
+  s_step_id = (t = dict_find(iter, MESSAGE_KEY_StepId)) ? t->value->int32 : 0;
   if ((t = dict_find(iter, MESSAGE_KEY_Maneuver))) s_maneuver = t->value->int32;
   if ((t = dict_find(iter, MESSAGE_KEY_Distance))) s_distance = t->value->int32;
   if ((t = dict_find(iter, MESSAGE_KEY_Instruction))) {
@@ -448,14 +451,16 @@ static void prv_take_step(DictionaryIterator *iter) {
 
   const bool first_step = !s_had_trip;
   s_had_trip = s_trip = true;
-  if (s_maneuver != old_maneuver || strcmp(old_instr, s_instr) != 0) {
+  // Two turns in a row can have the same maneuver and text ("Turn right" into
+  // unnamed alleys); the step id tells them apart.
+  if (s_step_id != old_step_id || s_maneuver != old_maneuver || strcmp(old_instr, s_instr) != 0) {
     // New step: buzz (not for the first one of the trip), and arm only the
     // thresholds still ahead.
     int dist;
     prv_predict(&dist, NULL, NULL);
     s_nudge_200 = dist > 200;
     s_nudge_100 = dist > 100;
-    APP_LOG(APP_LOG_LEVEL_INFO, "new step %d at %d m", s_maneuver, dist);
+    APP_LOG(APP_LOG_LEVEL_INFO, "new step %d (%d) at %d m", (int)s_step_id, s_maneuver, dist);
     if (!first_step) vibes_short_pulse();
   }
   // Close to the turn: don't wait out a 3 s poll.
@@ -468,9 +473,13 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   if ((t = dict_find(iter, MESSAGE_KEY_Lang))) s_vi = strcmp(t->value->cstring, "vi") == 0;
   if ((t = dict_find(iter, MESSAGE_KEY_Theme))) {
     const bool light = t->value->int32 != 0;
+    // Saved even when the launch guess already matched, so a fixed Light/Dark
+    // setting is what the next launch starts with.
+    if (!persist_exists(PERSIST_KEY_LIGHT) || persist_read_bool(PERSIST_KEY_LIGHT) != light) {
+      persist_write_bool(PERSIST_KEY_LIGHT, light);
+    }
     if (light != s_light) {
       s_light = light;
-      persist_write_bool(PERSIST_KEY_LIGHT, light);
       window_set_background_color(s_window, prv_theme(false).bg);
     }
   }
@@ -569,8 +578,8 @@ static void prv_init(void) {
   app_message_register_outbox_sent(prv_outbox_sent);
   app_message_register_outbox_failed(prv_outbox_failed);
   // Worst case: a step with a 90-byte Vietnamese instruction, Lang "vi" and every
-  // other key as int32 (197 bytes). State/Gps and Ended messages are smaller.
-  const uint32_t inbox = dict_calc_buffer_size(10, 4, 4, 91, 4, 4, 4, 4, 3, 4, 4);
+  // other key as int32 (208 bytes). State/Gps and Ended messages are smaller.
+  const uint32_t inbox = dict_calc_buffer_size(11, 4, 4, 4, 91, 4, 4, 4, 4, 3, 4, 4);
   app_message_open(inbox, dict_calc_buffer_size(1, 1));
   prv_schedule_poll(POLL_MS);
   s_second_timer = app_timer_register(1000, prv_second, NULL);

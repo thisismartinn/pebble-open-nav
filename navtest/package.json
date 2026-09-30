@@ -26,6 +26,7 @@
     },
     "messageKeys": [
       "Tick",
+      "StepId",
       "Maneuver",
       "Distance",
       "Instruction",

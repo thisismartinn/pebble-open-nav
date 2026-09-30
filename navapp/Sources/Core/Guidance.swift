@@ -49,7 +49,8 @@ public struct GuidanceUpdate: Sendable {
     public let distanceFromRoute: Double
     /// Distance along the route of the snapped fix, in metres.
     public let along: Double
-    /// Speed along the route in m/s, 0 when unknown or standing still.
+    /// Speed along the route towards the next maneuver in m/s: 0 when unknown, standing
+    /// still, or not making progress along the route.
     public let speed: Double
     /// When the GPS fix these numbers come from was taken.
     public let fixTime: Date
@@ -69,14 +70,19 @@ public final class Guidance {
     /// the distance expected from the speed and the time since the last fix.
     public var maxJumpAhead = 200.0
 
-    /// Speed along the route in m/s. Carry it over to the guidance for a new route
-    /// after a reroute, so the watch keeps predicting.
+    /// Ground speed in m/s, for dead reckoning between fixes. Carry it over to the
+    /// guidance for a new route after a reroute, so the watch keeps predicting.
     public var speed = 0.0
+
+    /// When the fix the route was requested from was taken. The first update then
+    /// allows for the distance covered since then, as for any gap between fixes.
+    public var startTime: Date?
 
     private var along = 0.0
     /// Dead-reckoned position when the snapped one has fallen well behind it.
     private var predicted = 0.0
     private var lastTime: Date?
+    private var lastDistanceFromRoute = 0.0
     /// Recent (time, along) pairs for estimating the speed when the GPS has none.
     private var history: [(time: Date, along: Double)] = []
     private var offRouteCount = 0
@@ -101,16 +107,19 @@ public final class Guidance {
         // beyond the window) until it drifted off the route. Dead reckoning carries on
         // from `predicted` while the snapped position lags behind it, e.g. held on a
         // corner of a tight loop, but never more than 60 m ahead of the snapped position.
-        let elapsed = lastTime.map { min(max(time.timeIntervalSince($0), 0), 60) } ?? 0
+        let elapsed = (lastTime ?? startTime).map { min(max(time.timeIntervalSince($0), 0), 60) } ?? 0
         let expected = elapsed * (self.speed + (gpsSpeed ?? self.speed)) / 2
         let reference = min(max(along, predicted), along + 60) + expected
 
-        func facingAway(_ i: Int) -> Bool {
-            guard let course, cum[i + 1] - cum[i] > 1 else { return false }
+        /// Angle between the course and segment `i`, in degrees (0...180).
+        func courseOffset(_ i: Int, _ course: Double) -> Double {
             let a = shape[i], b = shape[i + 1]
             let bearing = atan2((b.lon - a.lon) * cos(a.lat * .pi / 180), b.lat - a.lat) * 180 / .pi
-            let diff = abs((bearing - course + 540).truncatingRemainder(dividingBy: 360) - 180)
-            return diff > 100
+            return abs((bearing - course + 540).truncatingRemainder(dividingBy: 360) - 180)
+        }
+        func facingAway(_ i: Int) -> Bool {
+            guard let course, cum[i + 1] - cum[i] > 1 else { return false }
+            return courseOffset(i, course) > 100
         }
         // Nearest segment, optionally limited to a stretch of route around where we
         // were last time, so a fix can't jump past an upcoming U-turn onto the way back.
@@ -133,19 +142,51 @@ public final class Guidance {
             }
             return best
         }
-        // The first fix has nothing to stay close to: the rider may be well past the
-        // route's start by the time the route arrives.
+        // The first fix is penalised too, from the route's start plus the distance
+        // expected since `startTime`, so a slow rider near an upcoming U-turn isn't
+        // snapped onto the way back. A rider already well past the start still snaps
+        // there: with no nearby alternative the penalty changes nothing, and beyond
+        // the window the fix is re-acquired anywhere.
         var best = nearest(from: along - 30, to: max(along + maxJumpAhead, reference + expected / 2 + 50),
-                           penalizeJumps: lastTime != nil)
+                           penalizeJumps: true)
         var reacquired = false
         if best.d > offRouteDistance {
             best = nearest(from: nil, to: nil, penalizeJumps: false)  // re-acquire anywhere, e.g. after a detour
             reacquired = true
         }
+        let prevAlong = along
         along = cum[best.seg] + best.t * (cum[best.seg + 1] - cum[best.seg])
-        predicted = along < reference - 30 && !reacquired ? reference : along
+        // Keep the dead-reckoned lead only while this fix falls short of the distance
+        // expected since the last one, e.g. held on a corner. Measured from the last
+        // snapped position rather than from `reference`, which the lead itself pushes
+        // ahead: otherwise the lead would keep itself going, even when stopped.
+        let progress = along - prevAlong
+        let lagging = progress < expected - 10
+        predicted = !reacquired && along < reference - 30 && lagging ? reference : along
+        let firstFix = lastTime == nil
         updateSpeed(gpsSpeed, time: time, restart: reacquired || elapsed > 30)
         lastTime = time
+
+        // What the watch counts down with: the speed along the route. The GPS speed is
+        // projected on the route direction when the course is known, the best fit
+        // within 10 m of the snapped position so a corner doesn't count as a sideways
+        // move (the estimate from progress is along the route already). It's 0 while
+        // the snapped position isn't advancing and the fix is moving away from the
+        // route, e.g. riding straight on past a turn.
+        var routeSpeed = speed
+        if let course, gpsSpeed != nil {
+            var fit: Double?
+            var i = best.seg
+            while i > 0, cum[i] > along - 10 { i -= 1 }
+            while i < shape.count - 1, cum[i] <= along + 10 {
+                if cum[i + 1] - cum[i] > 1 { fit = max(fit ?? -1, cos(courseOffset(i, course) * .pi / 180)) }
+                i += 1
+            }
+            routeSpeed *= fit ?? 1
+        }
+        if !firstFix, elapsed > 0, progress < 0.1, best.d > lastDistanceFromRoute { routeSpeed = 0 }
+        routeSpeed = max(0, routeSpeed)
+        lastDistanceFromRoute = best.d
 
         // Next maneuver ahead of us (index 0 is the "start" instruction).
         let maneuvers = route.maneuvers
@@ -172,7 +213,7 @@ public final class Guidance {
             remainingTime: route.totalLength > 0 ? route.totalTime * remaining / route.totalLength : 0,
             distanceFromRoute: best.d,
             along: along,
-            speed: speed,
+            speed: routeSpeed,
             fixTime: time,
             arrived: arrived,
             needsReroute: offRouteCount >= offRouteFixes
@@ -234,9 +275,12 @@ public enum WatchStep {
 
     /// The next step, with every number as of the GPS fix (`fixTime`) so the watch
     /// can count down from there.
-    public static func step(_ u: GuidanceUpdate, _ ctx: WatchContext) -> [String: Any] {
+    /// - Parameter routeGeneration: goes up with each new route or reroute, so `stepId`
+    ///   changes with every step, even when two turns in a row have the same text.
+    public static func step(_ u: GuidanceUpdate, routeGeneration: Int, _ ctx: WatchContext) -> [String: Any] {
         ctx.fields.merging([
             "active": true,
+            "stepId": routeGeneration * 1000 + u.maneuverIndex,
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,
             "distance": Int(u.distanceToManeuver.rounded()),
             "instruction": watchText(u.maneuver.instruction),

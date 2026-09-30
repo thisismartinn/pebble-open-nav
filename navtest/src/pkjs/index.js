@@ -138,7 +138,12 @@ function handleStep(s, receivedAt) {
   if (typeof s.themeAuto === 'boolean') navThemeAuto = s.themeAuto ? 1 : 0;
   if (s.ended) {
     hadStep = false;
-    send({ Ended: 1, Arrived: s.arrived ? 1 : 0 });
+    // The nav app keeps answering "ended" until the next trip, so a watchapp opened
+    // now shows its start screen: give it the GPS line too.
+    probeGps();
+    var ended = { Ended: 1, Arrived: s.arrived ? 1 : 0 };
+    if (gpsLine) ended.Gps = gpsLine;
+    send(ended);
   } else if (s.routing) {
     hadStep = false;
     sendState(STATE_ROUTING);
@@ -149,6 +154,7 @@ function handleStep(s, receivedAt) {
     hadStep = true;
     var fixTime = Number(s.fixTime);
     send({
+      StepId: s.stepId | 0,
       Maneuver: s.maneuver | 0,
       Distance: Math.round(s.distance),
       Instruction: clipUtf8(String(s.instruction || ''), INSTRUCTION_MAX_BYTES),

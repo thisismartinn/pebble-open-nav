@@ -4,3 +4,7 @@
 "Navigation Ended" = "Navigation Ended";
 /* Arrival time and remaining distance, e.g. "ETA 19:25 · 8.4 km". */
 "ETA %@ · %@" = "ETA %1$@ · %2$@";
+/* Shown while the trip's route is being found. */
+"Finding a route…" = "Finding a route…";
+/* Shown when the app stopped updating the activity mid-trip (e.g. it was closed), instead of a turn that may be out of date. */
+"Open PebbleOpenNav" = "Open PebbleOpenNav";

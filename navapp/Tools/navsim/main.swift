@@ -75,7 +75,7 @@ Task {
                 print("Arrived. Serving \"ended\" for 20s.")
                 break
             }
-            let step = WatchStep.step(u, ctx)
+            let step = WatchStep.step(u, routeGeneration: 1, ctx)
             server.publish(step)
             let stats = server.pollStats
             print(String(format: "%5.0f m  next in %4.0f m  off-route %4.1f m  %4.0f m / %4.0fs left  polls %d  | %@",
