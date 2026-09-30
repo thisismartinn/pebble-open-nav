@@ -141,16 +141,20 @@ public struct WatchContext: Sendable {
     /// Phone language. The nav app is the watch's only reliable source for it:
     /// the Pebble iOS app is English-only and reports e.g. "en_VN" on a Vietnamese phone.
     public var vietnamese: Bool
-    /// Light theme on colour watches (easier to read in sunlight).
+    /// Light watch theme (easier to read in sunlight).
     public var light: Bool
+    /// The theme follows sunrise/sunset. The watch then guesses by the time of day
+    /// at launch instead of reusing a saved theme that may be hours old.
+    public var automaticTheme: Bool
 
-    public init(vietnamese: Bool, light: Bool) {
+    public init(vietnamese: Bool, light: Bool, automaticTheme: Bool = false) {
         self.vietnamese = vietnamese
         self.light = light
+        self.automaticTheme = automaticTheme
     }
 
     var fields: [String: Any] {
-        ["lang": vietnamese ? "vi" : "en", "theme": light ? "light" : "dark"]
+        ["lang": vietnamese ? "vi" : "en", "theme": light ? "light" : "dark", "themeAuto": automaticTheme]
     }
 }
 

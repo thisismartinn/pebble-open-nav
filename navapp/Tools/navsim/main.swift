@@ -48,7 +48,7 @@ server.onStateChange = { state in
     if case .failed(let message) = state { print("Server on 127.0.0.1:\(StepServer.port) failed: \(message)") }
 }
 let light = themeOption == "auto" ? Sun.isUp(at: Date(), at: from) : themeOption == "light"
-let ctx = WatchContext(vietnamese: vietnamese, light: light)
+let ctx = WatchContext(vietnamese: vietnamese, light: light, automaticTheme: themeOption == "auto")
 print("Watch theme: \(light ? "light" : "dark")")
 server.publish(WatchStep.idle(ctx))
 server.start()

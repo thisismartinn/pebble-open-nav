@@ -10,6 +10,7 @@ var REQUEST_TIMEOUT_MS = 2500;
 var navLang = null;
 // Watch theme from the nav app: 1 light, 0 dark (null until it answers).
 var navTheme = null;
+var navThemeAuto = null;  // 1 when the phone's Watch Display setting is Automatic
 
 function fallbackLang() {
   var code = '';
@@ -28,7 +29,7 @@ var STRINGS = {
   badData: ['Bad data from nav app', 'Dữ liệu không hợp lệ'],
   routing: ['Routing...', 'Đang tìm đường...'],
   noTrip: ['No trip started', 'Chưa bắt đầu chuyến đi'],
-  notAnswering: ['Nav app not answering', 'Ứng dụng không phản hồi'],
+  notAnswering: ['Disconnected', 'Mất kết nối'],
   probe: ['Probe mode', 'Chế độ kiểm tra'],
   tick: ['Tick {n}, max gap {g} s', 'Lượt {n}, gián đoạn tối đa {g} giây'],
   gpsOld: ['GPS {s} s old', 'GPS cũ {s} giây'],
@@ -49,6 +50,7 @@ function T(key, values) {
 function send(dict) {
   if (navLang) dict.Lang = navLang;
   if (navTheme !== null) dict.Theme = navTheme;
+  if (navThemeAuto !== null) dict.ThemeAuto = navThemeAuto;
   Pebble.sendAppMessage(dict);
 }
 
@@ -123,6 +125,7 @@ function sendProbe() {
 function handleStep(s) {
   if (s.lang === 'vi' || s.lang === 'en') navLang = s.lang;
   if (s.theme === 'light' || s.theme === 'dark') navTheme = s.theme === 'light' ? 1 : 0;
+  if (typeof s.themeAuto === 'boolean') navThemeAuto = s.themeAuto ? 1 : 0;
   if (s.ended) {
     hadStep = false;
     send({ Ended: 1, Instruction: s.reason || '' });

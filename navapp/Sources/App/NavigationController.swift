@@ -63,6 +63,9 @@ final class NavigationController: NSObject, ObservableObject {
     private var statusTimer: Timer?
     private var shutdownTask: Task<Void, Never>?
     private var payload: WatchPayload = .idle
+    /// The theme last sent to the watch; re-checked every second so Automatic
+    /// follows sunset even when nothing else is being published.
+    private var sentLight: Bool?
 
     /// After a trip ends, keep running this long so the watch (polling every
     /// 3 s) can still fetch "ended" with the phone locked. Stopping GPS lets
@@ -80,7 +83,11 @@ final class NavigationController: NSObject, ObservableObject {
         server.start()
         refreshWatchStatus()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshWatchStatus() }
+            Task { @MainActor in
+                guard let self else { return }
+                self.refreshWatchStatus()
+                if self.watchIsLight != self.sentLight { self.republish() }
+            }
         }
     }
 
@@ -286,7 +293,9 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     private func republish() {
-        let ctx = WatchContext(vietnamese: vietnamese, light: watchIsLight)
+        let light = watchIsLight
+        sentLight = light
+        let ctx = WatchContext(vietnamese: vietnamese, light: light, automaticTheme: watchTheme == .automatic)
         switch payload {
         case .idle: server.publish(WatchStep.idle(ctx))
         case .routing: server.publish(WatchStep.routing(ctx))

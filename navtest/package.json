@@ -34,7 +34,8 @@
       "Status",
       "Ended",
       "Lang",
-      "Theme"
+      "Theme",
+      "ThemeAuto"
     ],
     "resources": {
       "media": []

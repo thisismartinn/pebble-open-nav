@@ -35,9 +35,10 @@ static bool s_vi = false;
 #define TR(en, vi) (s_vi ? (vi) : (en))
 
 // Light theme: dark text on white is far easier to read in sunlight. The phone
-// decides (automatic: sunrise to sunset); the last choice is kept so the next
-// launch starts in the same theme.
+// decides (automatic: sunrise to sunset). Until it answers at launch, a fixed
+// Light/Dark choice is reused; with Automatic the watch guesses by the time of day.
 #define PERSIST_KEY_LIGHT 1
+#define PERSIST_KEY_AUTO 2
 static bool s_light = false;
 
 typedef struct {
@@ -170,7 +171,9 @@ static void prv_show_ended(const char *reason) {
   text_layer_set_font(s_instr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_color(s_instr_layer, prv_theme().fg);
   prv_refresh();
-  vibes_long_pulse();
+  // One light tap: the end screen says it all, and the system long pulse (500 ms) is too strong.
+  static const uint32_t ended_vibe[] = { 120 };
+  vibes_enqueue_custom_pattern((VibePattern){ .durations = ended_vibe, .num_segments = ARRAY_LENGTH(ended_vibe) });
   app_timer_register(QUIT_AFTER_END_MS, prv_quit, NULL);
 }
 
@@ -185,6 +188,12 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
       s_light = light;
       persist_write_bool(PERSIST_KEY_LIGHT, light);
       prv_apply_theme();
+    }
+  }
+  if ((t = dict_find(iter, MESSAGE_KEY_ThemeAuto))) {
+    const bool automatic = t->value->int32 != 0;
+    if (!persist_exists(PERSIST_KEY_AUTO) || persist_read_bool(PERSIST_KEY_AUTO) != automatic) {
+      persist_write_bool(PERSIST_KEY_AUTO, automatic);
     }
   }
   if (dict_find(iter, MESSAGE_KEY_Ended)) {
@@ -285,12 +294,13 @@ static void prv_window_unload(Window *window) {
 
 static void prv_init(void) {
   s_vi = strncmp(i18n_get_system_locale(), "vi", 2) == 0;
-  if (persist_exists(PERSIST_KEY_LIGHT)) {
-    s_light = persist_read_bool(PERSIST_KEY_LIGHT);
+  const bool automatic = !persist_exists(PERSIST_KEY_AUTO) || persist_read_bool(PERSIST_KEY_AUTO);
+  if (!automatic && persist_exists(PERSIST_KEY_LIGHT)) {
+    s_light = persist_read_bool(PERSIST_KEY_LIGHT);  // fixed Light or Dark on the phone
   } else {
     const time_t now = time(NULL);
     const int hour = localtime(&now)->tm_hour;
-    s_light = hour >= 6 && hour < 18;  // first launch: daytime guess until the phone answers
+    s_light = hour >= 6 && hour < 18;  // daytime guess until the phone answers
   }
   strncpy(s_top, TR("Waiting for phone…", "Đang chờ điện thoại…"), sizeof(s_top) - 1);
 
@@ -304,7 +314,7 @@ static void prv_init(void) {
 
   app_message_register_inbox_received(prv_inbox_received);
   app_message_register_outbox_failed(prv_outbox_failed);
-  app_message_open(256, 64);
+  app_message_open(384, 64);  // a full Vietnamese step with lang/theme is ~210 bytes
   s_last_reply = time(NULL);  // so "No reply" also shows if the phone never answers
   prv_schedule_poll();
 }
