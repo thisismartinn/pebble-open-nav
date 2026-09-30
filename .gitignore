@@ -1,8 +1,8 @@
-navtest/build/*
-!navtest/build/navtest.pbw
-navtest/screenshots/
+navwatch/build/*
+!navwatch/build/navwatch.pbw
+navwatch/screenshots/
 navapp/build/
 navapp/*.xcodeproj
 .DS_Store
-navtest/.lock-waf*
+navwatch/.lock-waf*
 release/

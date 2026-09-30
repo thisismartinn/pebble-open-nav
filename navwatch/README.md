@@ -1,4 +1,4 @@
-# navtest
+# PebbleOpenNav watchapp
 
 A Pebble watchapp/watchface written in C using the Pebble SDK.
 

@@ -1,7 +1,7 @@
 # PebbleOpenNav protocol (v2)
 
-How the iPhone app (`navapp/`), the watchapp's JavaScript (`navtest/src/pkjs/index.js`,
-running inside the Pebble iPhone app) and the watch (`navtest/src/c/navtest.c`) talk.
+How the iPhone app (`navapp/`), the watchapp's JavaScript (`navwatch/src/pkjs/index.js`,
+running inside the Pebble iPhone app) and the watch (`navwatch/src/c/pebbleopennav.c`) talk.
 
 ```
 PebbleOpenNav (iPhone)  --HTTP 127.0.0.1:8765-->  watchapp JS (Pebble app)  --AppMessage-->  watch

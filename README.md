@@ -14,8 +14,8 @@ iPhone: Nav Test app ──127.0.0.1──> Pebble app (watchapp JS) ──Bluet
 
 | Folder | What it is |
 | --- | --- |
-| `navtest/` | Pebble watchapp (C + JavaScript). `navtest/build/navtest.pbw` is ready to install. |
-| `navtest/mock_server.py` | Fake route server for the emulator (`SPEED=60` for a fast trip, `/start`, `/stop`). |
+| `navwatch/` | Pebble watchapp (C + JavaScript). Build it with `pebble build`; the release file is `PebbleOpenNav.pbw`. |
+| `navwatch/mock_server.py` | Fake route server for the emulator (`SPEED=60` for a fast trip, `/start`, `/stop`). |
 | `navapp/Sources/Core/` | Routing (Valhalla), search (Photon), guidance, 127.0.0.1 server. Shared by the app and `navsim`. |
 | `navapp/Sources/App/` | iPhone app (SwiftUI + MapKit): search, trip, background GPS. |
 | `navapp/Tools/navsim/` | Mac stand-in for the iPhone app: drives a real route and serves the watch emulator. |
@@ -65,7 +65,7 @@ built app's `DTSDKName` is older than `iphoneos26`.
 
 ### 1. Background test (works now, no .ipa needed)
 
-1. AirDrop `navtest/build/navtest.pbw` to the iPhone and open it with the Pebble app.
+1. AirDrop `PebbleOpenNav.pbw` to the iPhone and open it with the Pebble app.
 2. Open **Nav Test** on the watch. With no nav app running it goes into **probe mode**:
    `Tick N, max gap X s` plus the age of the Pebble app's own GPS fix.
 3. Lock the phone, put it in your pocket and walk for 10 minutes.
@@ -88,7 +88,7 @@ built app's `DTSDKName` is older than `iphoneos26`.
 
 ```bash
 navapp/build/navsim --route-json route.json --speed 10   # or pass from/to "lat,lon"
-cd navtest && pebble install --emulator emery
+cd navwatch && pebble install --emulator emery
 ```
 
 Start the server **before** the watchapp. The emulator's JavaScript runtime hangs on a
