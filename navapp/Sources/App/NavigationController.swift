@@ -14,35 +14,58 @@ final class NavigationController: NSObject, ObservableObject {
     @Published var query = ""
     @Published var results: [OpenMapServices.Place] = []
     @Published var searching = false
+    /// The last query that finished searching, to tell "no results" from "not searched yet".
+    @Published var lastSearch: String?
     @Published var errorMessage: String?
     @Published var costing: OpenMapServices.Costing = .motorbike
-    @Published var vietnamese = Locale.preferredLanguages.first?.hasPrefix("vi") ?? false
+    /// The app follows the phone's language (Vietnamese or English); directions
+    /// from Valhalla and the texts sent to the watch use the same language.
+    let vietnamese = Bundle.main.preferredLocalizations.first?.hasPrefix("vi") ?? false
     @Published var route: Route?
     @Published var update: GuidanceUpdate?
+    @Published var destinationName: String?
     @Published var location: CLLocation?
+    /// True between starting a trip and the first accurate fix to route from.
+    @Published var awaitingFix = false
+    @Published var preciseLocationOff = false
     @Published var watchStatus = ""
-    @Published var serverError: String?
+    @Published var serverProblem: String?
 
     private let manager = CLLocationManager()
     private let server = StepServer()
     private var guidance: Guidance?
     private var destination: OpenMapServices.Place?
+    /// Identifies the current trip, so a route request from an earlier trip
+    /// that finishes late is ignored.
+    private var tripID: UUID?
     private var lastReroute = Date.distantPast
     private var statusTimer: Timer?
+    private var shutdownTask: Task<Void, Never>?
+
+    /// After a trip ends, keep running this long so the watch (polling every
+    /// 3 s) can still fetch "ended" with the phone locked. Stopping GPS lets
+    /// iOS suspend the app.
+    private static let endedGracePeriod: UInt64 = 15_000_000_000
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        do {
-            try server.start()
-        } catch {
-            serverError = "The watch link couldn't start: \(error.localizedDescription)"
+        server.onStateChange = { [weak self] state in
+            Task { @MainActor in self?.serverStateChanged(state) }
         }
+        server.start()
         refreshWatchStatus()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshWatchStatus() }
         }
+    }
+
+    /// Call when the app comes to the foreground.
+    func appBecameActive() {
+        server.start()  // no-op while it's running; restarts it if iOS reclaimed the socket
+        refreshAccuracy()
+        if phase == .idle { requestLocation() }
     }
 
     // MARK: Search
@@ -50,7 +73,8 @@ final class NavigationController: NSObject, ObservableObject {
     func requestLocation() {
         switch manager.authorizationStatus {
         case .notDetermined: manager.requestWhenInUseAuthorization()
-        case .denied, .restricted: errorMessage = "Location is off for Nav Test. Turn it on in Settings."
+        case .denied, .restricted:
+            errorMessage = String(localized: "Location is off for Nav Test. Turn it on in Settings to get directions.")
         default: manager.requestLocation()
         }
     }
@@ -59,6 +83,7 @@ final class NavigationController: NSObject, ObservableObject {
         let text = query.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else {
             results = []
+            lastSearch = nil
             return
         }
         searching = true
@@ -67,7 +92,7 @@ final class NavigationController: NSObject, ObservableObject {
             defer { searching = false }
             do {
                 results = try await OpenMapServices.search(text, near: near)
-                if results.isEmpty { errorMessage = "No places found for \"\(text)\"." }
+                lastSearch = text
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -77,22 +102,39 @@ final class NavigationController: NSObject, ObservableObject {
     // MARK: Trip
 
     func start(to place: OpenMapServices.Place) {
-        guard let here = location else {
-            errorMessage = "Still finding your location. Try again in a moment."
-            requestLocation()
-            return
-        }
+        shutdownTask?.cancel()
+        shutdownTask = nil
         destination = place
+        destinationName = place.name
         results = []
+        route = nil
+        update = nil
+        guidance = nil
+        tripID = UUID()
         phase = .routing
+        awaitingFix = true
+        server.start()
         server.resetStats()
-        server.publish(WatchStep.idle)
+        server.publish(WatchStep.routing)
         startGPS()
-        Task { await fetchRoute(from: here.coordinate) }
+        refreshAccuracy()
+        // Route from a fresh fix: `location` may be minutes old if the app was in the background.
+        if let fix = location, isUsable(fix, maxAge: 10) { routeFrom(fix) }
+    }
+
+    /// Cancels a trip that is still finding its route.
+    func cancel() {
+        tripID = nil
+        destination = nil
+        destinationName = nil
+        awaitingFix = false
+        phase = .idle
+        server.publish(WatchStep.idle)
+        stopGPS()
     }
 
     func stop() {
-        finish(reason: vietnamese ? "Đã dừng trên điện thoại" : "Stopped on phone")
+        finish(reason: String(localized: "Stopped on phone"))
     }
 
     /// Back to search. The watch keeps getting "ended" until the next trip
@@ -102,44 +144,58 @@ final class NavigationController: NSObject, ObservableObject {
         route = nil
         update = nil
         destination = nil
+        destinationName = nil
     }
 
-    private func fetchRoute(from start: CLLocationCoordinate2D) async {
-        guard let destination else { return }
+    private func routeFrom(_ fix: CLLocation) {
+        awaitingFix = false
+        let trip = tripID
+        Task { await fetchRoute(from: fix.coordinate, trip: trip) }
+    }
+
+    private func fetchRoute(from start: CLLocationCoordinate2D, trip: UUID?) async {
+        guard let trip, trip == tripID, let destination else { return }
         do {
             let route = try await OpenMapServices.route(
                 from: Coordinate(lat: start.latitude, lon: start.longitude),
                 to: destination.coordinate, costing: costing,
                 language: vietnamese ? "vi-VN" : "en-US")
-            guard phase == .routing || phase == .navigating else { return }  // ended meanwhile
+            guard trip == tripID else { return }  // trip ended or replaced meanwhile
             self.route = route
             guidance = Guidance(route: route)
             phase = .navigating
             if let location { handle(location) }
         } catch {
-            errorMessage = error.localizedDescription
+            guard trip == tripID else { return }
             if phase == .routing {
-                phase = .idle
-                stopGPS()
+                errorMessage = error.localizedDescription
+                cancel()
             }
+            // A failed reroute keeps the current route; the next off-route fix retries.
         }
     }
 
     private func handle(_ fix: CLLocation) {
         location = fix
-        guard phase == .navigating, let guidance,
-              fix.horizontalAccuracy >= 0, fix.horizontalAccuracy < 100 else { return }
+        if phase == .routing, awaitingFix, isUsable(fix, maxAge: 10) {
+            routeFrom(fix)
+            return
+        }
+        guard phase == .navigating, let guidance, isUsable(fix, maxAge: 10) else { return }
         let here = Coordinate(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
-        guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy) else { return }
+        let course = fix.course >= 0 && fix.speed > 2 && fix.courseAccuracy >= 0 && fix.courseAccuracy < 45
+            ? fix.course : nil
+        guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy, course: course) else { return }
         update = u
         if u.arrived {
-            finish(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived")
+            finish(reason: String(localized: "You have arrived"))
             return
         }
         server.publish(WatchStep.step(u, vietnamese: vietnamese))
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
             lastReroute = Date()
-            Task { await fetchRoute(from: fix.coordinate) }
+            let trip = tripID
+            Task { await fetchRoute(from: fix.coordinate, trip: trip) }
         }
     }
 
@@ -147,7 +203,19 @@ final class NavigationController: NSObject, ObservableObject {
         server.publish(WatchStep.ended(reason: reason))
         phase = .ended(reason)
         guidance = nil
-        stopGPS()
+        tripID = nil
+        awaitingFix = false
+        shutdownTask?.cancel()
+        shutdownTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.endedGracePeriod)
+            guard let self, !Task.isCancelled, self.tripID == nil else { return }
+            self.stopGPS()
+        }
+    }
+
+    private func isUsable(_ fix: CLLocation, maxAge: TimeInterval) -> Bool {
+        fix.horizontalAccuracy >= 0 && fix.horizontalAccuracy < 100
+            && -fix.timestamp.timeIntervalSinceNow < maxAge
     }
 
     // MARK: GPS
@@ -174,14 +242,36 @@ final class NavigationController: NSObject, ObservableObject {
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
+    /// With Precise Location off, fixes are kilometres off and turn-by-turn can't work.
+    /// Ask for full accuracy for this trip, and tell the user if it stays off.
+    private func refreshAccuracy() {
+        let reduced = manager.accuracyAuthorization == .reducedAccuracy
+            && manager.authorizationStatus != .notDetermined
+        preciseLocationOff = reduced
+        if reduced, phase == .routing || phase == .navigating {
+            manager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "Navigation")
+        }
+    }
+
+    // MARK: Watch link
+
+    private func serverStateChanged(_ state: StepServer.State) {
+        switch state {
+        case .running: serverProblem = nil
+        case .starting: break
+        case .failed(let message): serverProblem = String(localized: "The watch link stopped (\(message)). Retrying…")
+        }
+    }
+
     private func refreshWatchStatus() {
         let stats = server.pollStats
         guard let last = stats.last else {
-            watchStatus = "Watch not connected yet. Open Nav Test on your Pebble."
+            watchStatus = String(localized: "Not connected yet. Open Nav Test on your Pebble.")
             return
         }
         let ago = Int(Date().timeIntervalSince(last))
-        watchStatus = "Watch checked in \(ago) s ago · \(stats.count) times · longest gap \(Int(stats.maxGap)) s"
+        let gap = Int(stats.maxGap)
+        watchStatus = String(localized: "Checked in \(ago) s ago · \(stats.count) times · longest gap \(gap) s")
     }
 }
 
@@ -197,6 +287,7 @@ extension NavigationController: CLLocationManagerDelegate {
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
+            self.refreshAccuracy()
             switch self.manager.authorizationStatus {
             case .authorizedWhenInUse, .authorizedAlways: self.manager.requestLocation()
             default: break

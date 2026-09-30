@@ -39,7 +39,7 @@ public enum OpenMapServices {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             let message = (try? JSONDecoder().decode(ValhallaError.self, from: data))?.error
-            throw ServiceError(message: message ?? "Couldn't get a route")
+            throw ServiceError(message: message ?? String(localized: "Couldn't get a route"))
         }
         return try parseRoute(data)
     }
@@ -49,7 +49,7 @@ public enum OpenMapServices {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let trip = try decoder.decode(ValhallaResponse.self, from: data).trip
-        guard let leg = trip.legs.first else { throw ServiceError(message: "Route has no legs") }
+        guard let leg = trip.legs.first else { throw ServiceError(message: String(localized: "Couldn't get a route")) }
         return Route(shape: Polyline.decode(leg.shape), maneuvers: leg.maneuvers,
                      totalTime: trip.summary.time)
     }
@@ -79,7 +79,7 @@ public enum OpenMapServices {
             let street = [p.housenumber, p.street].compactMap { $0 }.joined(separator: " ")
             let detail = [street, p.district, p.city, p.country]
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
-            return Place(name: p.name ?? (street.isEmpty ? "Unnamed place" : street),
+            return Place(name: p.name ?? (street.isEmpty ? String(localized: "Unnamed place") : street),
                          detail: detail,
                          coordinate: Coordinate(lat: f.geometry.coordinates[1],
                                                 lon: f.geometry.coordinates[0]))

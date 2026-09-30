@@ -2,6 +2,7 @@
 name: NavTest
 options:
   bundleIdPrefix: local.pebblenav
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
 settings:
@@ -31,6 +32,9 @@ targets:
         UIBackgroundModes: [location]
         NSLocationWhenInUseUsageDescription: Used to calculate the route and update directions during a trip you start. GPS stops when the trip ends.
         NSLocationAlwaysAndWhenInUseUsageDescription: Used to calculate the route and update directions during a trip you start. GPS stops when the trip ends.
+        # Asked for with requestTemporaryFullAccuracyAuthorization when Precise Location is off.
+        NSLocationTemporaryUsageDescriptionDictionary:
+          Navigation: Turn-by-turn directions need your precise location to follow the route.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.pebblenav.navtest

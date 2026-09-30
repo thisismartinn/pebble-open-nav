@@ -1,0 +1,37 @@
+/* Nav Test UI strings. Keys are the English text used in the Swift code. */
+
+"Nav Test" = "Nav Test";
+"Route" = "Route";
+"Destination" = "Destination";
+"Results" = "Results";
+"Route Options" = "Route Options";
+"Travel By" = "Travel By";
+"Motorbike" = "Motorbike";
+"Car" = "Car";
+"Bicycle" = "Bicycle";
+"Walk" = "Walk";
+"Search for a place or address" = "Search for a place or address";
+"Getting your location…" = "Getting your location…";
+"Finding a route…" = "Finding a route…";
+"Cancel" = "Cancel";
+"Waiting for GPS…" = "Waiting for GPS…";
+"End Route" = "End Route";
+"Remaining" = "Remaining";
+"Arrival" = "Arrival";
+"Navigation Ended" = "Navigation Ended";
+"New Trip" = "New Trip";
+"Precise Location is off, so directions can't follow you turn by turn." = "Precise Location is off, so directions can't follow you turn by turn.";
+"Open Settings" = "Open Settings";
+"Install Watchapp" = "Install Watchapp";
+"Pebble" = "Pebble";
+"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone." = "Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone.";
+"Something Went Wrong" = "Something Went Wrong";
+"OK" = "OK";
+"Location is off for Nav Test. Turn it on in Settings to get directions." = "Location is off for Nav Test. Turn it on in Settings to get directions.";
+"Stopped on phone" = "Stopped on phone";
+"You have arrived" = "You have arrived";
+"The watch link stopped (%@). Retrying…" = "The watch link stopped (%@). Retrying…";
+"Not connected yet. Open Nav Test on your Pebble." = "Not connected yet. Open Nav Test on your Pebble.";
+"Checked in %lld s ago · %lld times · longest gap %lld s" = "Checked in %lld s ago · %lld times · longest gap %lld s";
+"Couldn't get a route" = "Couldn't get a route";
+"Unnamed place" = "Unnamed place";

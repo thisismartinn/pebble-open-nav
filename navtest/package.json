@@ -32,7 +32,8 @@
       "Remaining",
       "Eta",
       "Status",
-      "Ended"
+      "Ended",
+      "Lang"
     ],
     "resources": {
       "media": []

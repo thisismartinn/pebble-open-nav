@@ -20,7 +20,7 @@ static int s_arrow_size = 60;  // arrow box in px; smaller on short screens
 static int s_maneuver = M_NONE;
 static int s_distance = -1;
 static char s_remaining[24] = "";
-static char s_top[48] = "Waiting for phone…";
+static char s_top[48] = "";
 static char s_dist[16] = "";
 static char s_instr[96] = "";
 static char s_eta[48] = "";
@@ -28,6 +28,11 @@ static bool s_warned_near = false;
 static time_t s_last_reply = 0;
 static bool s_had_trip = false;  // seen a real step this session, so an "ended" is ours
 static bool s_ended = false;
+
+// Vietnamese or English. Starts from the watch's language (set by its language
+// pack), then follows the phone's language, which the JS sends with every message.
+static bool s_vi = false;
+#define TR(en, vi) (s_vi ? (vi) : (en))
 
 static void prv_line(GContext *ctx, int x0, int y0, int x1, int y1) {
   graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
@@ -102,7 +107,7 @@ static void prv_send_tick(void *data) {
   if (s_last_reply) {
     int silent = (int)(time(NULL) - s_last_reply);
     if (silent >= STALE_S) {
-      snprintf(s_top, sizeof(s_top), "No reply for %d s", silent);
+      snprintf(s_top, sizeof(s_top), TR("No reply for %d s", "Không phản hồi %d giây"), silent);
       prv_refresh();
     }
   }
@@ -127,7 +132,7 @@ static void prv_show_ended(const char *reason) {
   s_maneuver = M_ENDED;
   s_top[0] = '\0';
   s_dist[0] = '\0';
-  strncpy(s_instr, "Navigation Ended", sizeof(s_instr) - 1);
+  strncpy(s_instr, TR("Navigation Ended", "Đã kết thúc chỉ đường"), sizeof(s_instr) - 1);
   strncpy(s_eta, reason, sizeof(s_eta) - 1);
   text_layer_set_font(s_instr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_color(s_instr_layer, GColorWhite);
@@ -140,13 +145,14 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   Tuple *t;
   if (s_ended) return;
   s_last_reply = time(NULL);
+  if ((t = dict_find(iter, MESSAGE_KEY_Lang))) s_vi = strcmp(t->value->cstring, "vi") == 0;
   if (dict_find(iter, MESSAGE_KEY_Ended)) {
     if (s_had_trip) {
       t = dict_find(iter, MESSAGE_KEY_Instruction);
       prv_show_ended(t ? t->value->cstring : "");
     } else {
       // Left over from an earlier trip; wait for a new one instead of quitting.
-      strncpy(s_top, "No trip started", sizeof(s_top) - 1);
+      strncpy(s_top, TR("No trip started", "Chưa bắt đầu chuyến đi"), sizeof(s_top) - 1);
       prv_refresh();
     }
     return;
@@ -167,14 +173,15 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   if ((t = dict_find(iter, MESSAGE_KEY_Remaining))) strncpy(s_remaining, t->value->cstring, sizeof(s_remaining) - 1);
   if ((t = dict_find(iter, MESSAGE_KEY_Eta))) strncpy(s_eta, t->value->cstring, sizeof(s_eta) - 1);
 
+  const bool first_step = !s_had_trip;
   if (s_maneuver != M_NONE) s_had_trip = true;
   strncpy(s_top, s_remaining, sizeof(s_top) - 1);
   prv_format_distance(s_distance);
 
-  // Buzz once on a new step, twice when the turn is close.
+  // Buzz once on a new step (not the first one of the trip), twice when the turn is close.
   if (s_maneuver != old_maneuver || strcmp(old_instr, s_instr) != 0) {
     s_warned_near = false;
-    if (old_maneuver != M_NONE) vibes_short_pulse();
+    if (!first_step && s_maneuver != M_NONE) vibes_short_pulse();
   } else if (!s_warned_near && s_distance >= 0 && s_distance <= NEAR_TURN_M) {
     s_warned_near = true;
     vibes_double_pulse();
@@ -184,7 +191,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 
 static void prv_outbox_failed(DictionaryIterator *iter, AppMessageResult reason, void *context) {
   if (s_ended) return;
-  snprintf(s_top, sizeof(s_top), "No phone (%d)", (int)reason);
+  snprintf(s_top, sizeof(s_top), TR("No phone (%d)", "Mất kết nối điện thoại (%d)"), (int)reason);
   prv_refresh();
 }
 
@@ -238,6 +245,9 @@ static void prv_window_unload(Window *window) {
 }
 
 static void prv_init(void) {
+  s_vi = strncmp(i18n_get_system_locale(), "vi", 2) == 0;
+  strncpy(s_top, TR("Waiting for phone…", "Đang chờ điện thoại…"), sizeof(s_top) - 1);
+
   s_window = window_create();
   window_set_background_color(s_window, GColorBlack);
   window_set_window_handlers(s_window, (WindowHandlers) {

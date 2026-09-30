@@ -42,12 +42,10 @@ func position(on route: Route, at distance: Double) -> Coordinate {
 }
 
 let server = StepServer()
-do {
-    try server.start()
-} catch {
-    print("Couldn't start server on 127.0.0.1:\(StepServer.port): \(error)")
-    exit(1)
+server.onStateChange = { state in
+    if case .failed(let message) = state { print("Server on 127.0.0.1:\(StepServer.port) failed: \(message)") }
 }
+server.start()
 
 Task {
     do {

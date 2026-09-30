@@ -7,6 +7,14 @@ import Network
 public final class StepServer: @unchecked Sendable {
     public static let port: UInt16 = 8765
 
+    public enum State: Equatable, Sendable {
+        case starting, running
+        case failed(String)
+    }
+
+    /// Called on the server's queue whenever the listener's state changes.
+    public var onStateChange: (@Sendable (State) -> Void)?
+
     private let queue = DispatchQueue(label: "StepServer")
     private let lock = NSLock()
     private var listener: NWListener?
@@ -41,20 +49,56 @@ public final class StepServer: @unchecked Sendable {
         lock.unlock()
     }
 
-    public func start() throws {
-        guard listener == nil else { return }
-        let params = NWParameters.tcp
-        params.requiredInterfaceType = .loopback
-        params.allowLocalEndpointReuse = true
-        let listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: Self.port)!)
-        listener.newConnectionHandler = { [weak self] connection in self?.serve(connection) }
-        listener.start(queue: queue)
-        self.listener = listener
+    /// Starts listening if not already. Safe to call repeatedly, e.g. when the
+    /// app returns to the foreground or a trip starts.
+    public func start() {
+        queue.async { self.startOnQueue() }
     }
 
     public func stop() {
-        listener?.cancel()
-        listener = nil
+        queue.async {
+            self.listener?.cancel()
+            self.listener = nil
+        }
+    }
+
+    private func startOnQueue() {
+        guard listener == nil else { return }
+        onStateChange?(.starting)
+        let params = NWParameters.tcp
+        params.requiredInterfaceType = .loopback
+        params.allowLocalEndpointReuse = true
+        let listener: NWListener
+        do {
+            listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: Self.port)!)
+        } catch {
+            onStateChange?(.failed(error.localizedDescription))
+            restartSoon()
+            return
+        }
+        listener.newConnectionHandler = { [weak self] connection in self?.serve(connection) }
+        // iOS can tear down a listening socket (e.g. after the app was suspended);
+        // restart instead of silently leaving the watch with nothing to reach.
+        listener.stateUpdateHandler = { [weak self, weak listener] state in
+            guard let self else { return }
+            switch state {
+            case .ready:
+                self.onStateChange?(.running)
+            case .failed(let error), .waiting(let error):
+                self.onStateChange?(.failed(error.localizedDescription))
+                listener?.cancel()
+                if self.listener === listener { self.listener = nil }
+                self.restartSoon()
+            default:
+                break
+            }
+        }
+        self.listener = listener
+        listener.start(queue: queue)
+    }
+
+    private func restartSoon() {
+        queue.asyncAfter(deadline: .now() + 2) { self.startOnQueue() }
     }
 
     private func serve(_ connection: NWConnection) {

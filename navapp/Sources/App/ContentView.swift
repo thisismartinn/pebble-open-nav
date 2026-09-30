@@ -1,36 +1,82 @@
 import MapKit
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
+/// Full-screen map with a persistent bottom sheet, like Apple Maps. Everything
+/// uses stock SwiftUI components, SF Symbols and system text styles, so it
+/// follows Dynamic Type, Dark Mode and the system accent colour.
 struct ContentView: View {
     @StateObject private var nav = NavigationController()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var camera: MapCameraPosition = .userLocation(fallback: .automatic)
+    @State private var detent: PresentationDetent = ContentView.collapsed
+
+    static let collapsed = PresentationDetent.fraction(0.3)
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Map(position: $camera) {
-                UserAnnotation()
-                if let route = nav.route {
-                    MapPolyline(coordinates: route.shape.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    })
+        Map(position: $camera) {
+            UserAnnotation()
+            if let route = nav.route {
+                MapPolyline(coordinates: route.shape.map(\.location2D))
                     .stroke(.blue, lineWidth: 6)
+                if let end = route.shape.last {
+                    Marker(nav.destinationName ?? String(localized: "Destination"), coordinate: end.location2D)
                 }
             }
-            .ignoresSafeArea()
-
-            panel
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
-                .padding()
         }
-        .onAppear { nav.requestLocation() }
+        .mapControls {
+            MapUserLocationButton()
+            MapCompass()
+            MapScaleView()
+        }
+        .sheet(isPresented: .constant(true)) {
+            TripSheet(nav: nav, detent: $detent)
+                .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled()
+        }
+        .onAppear { nav.appBecameActive() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { nav.appBecameActive() }
+        }
         .onChange(of: nav.phase) { _, phase in
-            camera = phase == .navigating
-                ? .userLocation(followsHeading: true, fallback: .automatic)
-                : .userLocation(fallback: .automatic)
+            switch phase {
+            case .navigating:
+                camera = .userLocation(followsHeading: true, fallback: .automatic)
+                detent = ContentView.collapsed
+            case .routing, .ended:
+                detent = ContentView.collapsed
+            case .idle:
+                camera = .userLocation(fallback: .automatic)
+            }
         }
-        .alert("Something went wrong", isPresented: Binding(
+    }
+}
+
+private struct TripSheet: View {
+    @ObservedObject var nav: NavigationController
+    @Binding var detent: PresentationDetent
+    @State private var searchActive = false
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                switch nav.phase {
+                case .idle: searchList
+                case .routing: routingList
+                case .navigating: guidanceList
+                case .ended(let reason): ended(reason)
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        // Alerts must come from the sheet: the view under a presented sheet can't show one.
+        .alert("Something Went Wrong", isPresented: Binding(
             get: { nav.errorMessage != nil },
             set: { if !$0 { nav.errorMessage = nil } }
         )) {
@@ -40,105 +86,219 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder private var panel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            switch nav.phase {
-            case .idle:
-                searchPanel
-            case .routing:
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Finding a route…")
-                }
-            case .navigating:
-                guidancePanel
-            case .ended(let reason):
-                Text("Navigation ended").font(.title2.bold())
-                Text(reason).foregroundStyle(.secondary)
-                Button("New trip") { nav.reset() }
-                    .buttonStyle(.borderedProminent)
-            }
-            Divider()
-            Text(nav.watchStatus).font(.footnote).foregroundStyle(.secondary)
-            if let error = nav.serverError {
-                Text(error).font(.footnote).foregroundStyle(.red)
-            }
+    private var title: String {
+        switch nav.phase {
+        case .idle: String(localized: "Nav Test")
+        case .routing, .navigating: nav.destinationName ?? String(localized: "Route")
+        case .ended: ""
         }
     }
 
-    @ViewBuilder private var searchPanel: some View {
-        TextField("Search for a place or address", text: $nav.query)
-            .textFieldStyle(.roundedBorder)
-            .submitLabel(.search)
-            .onSubmit { nav.search() }
-        Picker("Travel by", selection: $nav.costing) {
-            ForEach(OpenMapServices.Costing.allCases, id: \.self) { Text($0.label).tag($0) }
-        }
-        .pickerStyle(.segmented)
-        Toggle("Directions in Vietnamese", isOn: $nav.vietnamese)
-        if nav.searching {
-            ProgressView()
-        }
-        if !nav.results.isEmpty {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
+    // MARK: Search
+
+    private var searchList: some View {
+        List {
+            if nav.searching {
+                ProgressView().frame(maxWidth: .infinity)
+            } else if !nav.results.isEmpty {
+                Section("Results") {
                     ForEach(nav.results) { place in
                         Button {
                             nav.start(to: place)
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(place.name).font(.body.weight(.semibold))
-                                Text(place.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            PlaceRow(place: place)
                         }
-                        .buttonStyle(.plain)
+                        .tint(.primary)
+                    }
+                }
+            } else if let searched = nav.lastSearch, searched == nav.query {
+                ContentUnavailableView.search(text: searched)
+            }
+
+            Section("Route Options") {
+                Picker("Travel By", selection: $nav.costing) {
+                    ForEach(OpenMapServices.Costing.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+            precisionSection
+            watchSection
+        }
+        .searchable(text: $nav.query, isPresented: $searchActive,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search for a place or address")
+        .onSubmit(of: .search) { nav.search() }
+        .onChange(of: searchActive) { _, active in
+            if active { detent = .large }
+        }
+    }
+
+    // MARK: Trip
+
+    private var routingList: some View {
+        List {
+            Section {
+                Label {
+                    if nav.awaitingFix {
+                        Text("Getting your location…")
+                    } else {
+                        Text("Finding a route…")
+                    }
+                } icon: {
+                    ProgressView()
+                }
+                Button("Cancel", role: .destructive) { nav.cancel() }
+            }
+            precisionSection
+            watchSection
+        }
+    }
+
+    private var guidanceList: some View {
+        List {
+            Section {
+                if let u = nav.update {
+                    HStack(spacing: 16) {
+                        Image(systemName: WatchManeuver(valhallaType: u.maneuver.type).symbolName)
+                            .font(.largeTitle.weight(.semibold))
+                            .foregroundStyle(.tint)
+                            .frame(minWidth: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(Format.distance(u.distanceToManeuver))
+                                .font(.largeTitle.bold())
+                                .monospacedDigit()
+                            Text(WatchStep.watchText(u.maneuver.instruction, maxBytes: 500))
+                                .font(.title3)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .accessibilityElement(children: .combine)
+                    LabeledContent("Remaining",
+                                   value: "\(Format.distance(u.remainingDistance)) · \(Format.duration(u.remainingTime))")
+                    LabeledContent("Arrival") {
+                        Text(Date(timeIntervalSinceNow: u.remainingTime), style: .time)
+                    }
+                } else {
+                    Label {
+                        Text("Waiting for GPS…")
+                    } icon: {
+                        ProgressView()
                     }
                 }
             }
-            .frame(maxHeight: 240)
-        }
-        if let pbw = Bundle.main.url(forResource: "navtest", withExtension: "pbw") {
-            ShareLink(item: pbw) {
-                Label("Install the watchapp on your Pebble", systemImage: "applewatch")
+            Section {
+                Button("End Route", role: .destructive) { nav.stop() }
             }
-            .font(.footnote)
+            precisionSection
+            watchSection
         }
     }
 
-    @ViewBuilder private var guidancePanel: some View {
-        if let u = nav.update {
-            Text(formatDistance(u.distanceToManeuver)).font(.system(size: 44, weight: .bold))
-            Text(WatchStep.watchText(u.maneuver.instruction, maxBytes: 500)).font(.title3.weight(.semibold))
-            Text(String(format: "%.1f km · %d min left", u.remainingDistance / 1000,
-                        max(1, Int((u.remainingTime / 60).rounded()))))
-                .foregroundStyle(.secondary)
-        } else {
-            HStack(spacing: 8) {
-                ProgressView()
-                Text("Waiting for GPS…")
-            }
+    private func ended(_ reason: String) -> some View {
+        ContentUnavailableView {
+            Label("Navigation Ended", systemImage: "checkmark.circle.fill")
+        } description: {
+            Text(reason)
+        } actions: {
+            Button("New Trip") { nav.reset() }
+                .buttonStyle(.borderedProminent)
         }
-        Button(role: .destructive) {
-            nav.stop()
-        } label: {
-            Text("End navigation").frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
     }
 
-    private func formatDistance(_ m: Double) -> String {
-        m < 1000 ? "\(Int(m / 10) * 10) m" : String(format: "%.1f km", m / 1000)
+    // MARK: Shared sections
+
+    @ViewBuilder private var precisionSection: some View {
+        if nav.preciseLocationOff {
+            Section {
+                Label("Precise Location is off, so directions can't follow you turn by turn.",
+                      systemImage: "location.slash")
+                #if os(iOS)
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+                #endif
+            }
+        }
+    }
+
+    private var watchSection: some View {
+        Section {
+            Label(nav.watchStatus, systemImage: "applewatch")
+            if let problem = nav.serverProblem {
+                Label(problem, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+            }
+            if let pbw = Bundle.main.url(forResource: "navtest", withExtension: "pbw") {
+                ShareLink(item: pbw) {
+                    Label("Install Watchapp", systemImage: "square.and.arrow.up")
+                }
+            }
+        } header: {
+            Text("Pebble")
+        } footer: {
+            Text("Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone.")
+        }
+    }
+}
+
+private struct PlaceRow: View {
+    let place: OpenMapServices.Place
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(place.name)
+                if !place.detail.isEmpty {
+                    Text(place.detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } icon: {
+            Image(systemName: "mappin.circle.fill")
+                .foregroundStyle(.red)
+        }
+    }
+}
+
+/// System formatters, so units and wording follow the phone's region settings.
+private enum Format {
+    static func distance(_ metres: Double) -> String {
+        Measurement(value: metres, unit: UnitLength.meters)
+            .formatted(.measurement(width: .abbreviated, usage: .road))
+    }
+
+    static func duration(_ seconds: Double) -> String {
+        Duration.seconds(max(60, seconds))
+            .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+    }
+}
+
+private extension Coordinate {
+    var location2D: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
+}
+
+extension WatchManeuver {
+    var symbolName: String {
+        switch self {
+        case .none, .straight: "arrow.up"
+        case .left: "arrow.turn.up.left"
+        case .right: "arrow.turn.up.right"
+        case .slightLeft: "arrow.up.left"
+        case .slightRight: "arrow.up.right"
+        case .uturn: "arrow.uturn.down"
+        case .arrive: "mappin.circle.fill"
+        }
     }
 }
 
 extension OpenMapServices.Costing {
     var label: String {
         switch self {
-        case .motorbike: "Motorbike"
-        case .car: "Car"
-        case .bicycle: "Bicycle"
-        case .walk: "Walk"
+        case .motorbike: String(localized: "Motorbike")
+        case .car: String(localized: "Car")
+        case .bicycle: String(localized: "Bicycle")
+        case .walk: String(localized: "Walk")
         }
     }
 }

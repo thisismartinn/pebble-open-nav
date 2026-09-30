@@ -57,33 +57,55 @@ public final class Guidance {
     public var offRouteDistance = 40.0
     public var offRouteFixes = 3
 
-    private var segment = 0
+    /// How far ahead along the route a fix may snap between two updates.
+    public var maxJumpAhead = 200.0
+
+    private var along = 0.0
     private var offRouteCount = 0
 
     public init(route: Route) {
         self.route = route
     }
 
-    public func update(_ location: Coordinate, accuracy: Double = 10) -> GuidanceUpdate? {
+    /// - Parameter course: direction of travel in degrees from north, when known.
+    ///   Used to avoid snapping onto the opposite carriageway of a divided road.
+    public func update(_ location: Coordinate, accuracy: Double = 10, course: Double? = nil) -> GuidanceUpdate? {
         let shape = route.shape, cum = route.cumulative
         guard shape.count >= 2, route.maneuvers.count >= 2 else { return nil }
 
-        // Search near the last snapped segment first; fall back to the whole route.
-        func nearest(in range: ClosedRange<Int>) -> (seg: Int, t: Double, d: Double) {
-            var best = (seg: range.lowerBound, t: 0.0, d: Double.greatestFiniteMagnitude)
-            for i in range {
+        func facingAway(_ i: Int) -> Bool {
+            guard let course, cum[i + 1] - cum[i] > 1 else { return false }
+            let a = shape[i], b = shape[i + 1]
+            let bearing = atan2((b.lon - a.lon) * cos(a.lat * .pi / 180), b.lat - a.lat) * 180 / .pi
+            let diff = abs((bearing - course + 540).truncatingRemainder(dividingBy: 360) - 180)
+            return diff > 100
+        }
+        // Nearest segment, optionally limited to a stretch of route around where we
+        // were last time, so a fix can't jump past an upcoming U-turn onto the way back.
+        // Jumping far ahead also costs a little, so without a heading (slow or
+        // stopped) the fix still prefers staying on the stretch it was on.
+        func nearest(from lower: Double?, to upper: Double?, penalizeJumps: Bool) -> (seg: Int, t: Double, d: Double) {
+            var best = (seg: 0, t: 0.0, d: Double.greatestFiniteMagnitude)
+            var bestScore = Double.greatestFiniteMagnitude
+            for i in 0..<(shape.count - 1) {
+                if let lower, cum[i + 1] < lower { continue }
+                if let upper, cum[i] > upper { break }
                 let p = project(location, onto: shape[i], shape[i + 1])
-                if p.distance < best.d { best = (i, p.t, p.distance) }
+                let jump = cum[i] + p.t * (cum[i + 1] - cum[i]) - along
+                var score = p.distance + (facingAway(i) ? 1000 : 0)
+                if penalizeJumps, jump > 30 { score += (jump - 30) * 0.5 }
+                if score < bestScore {
+                    bestScore = score
+                    best = (i, p.t, p.distance)
+                }
             }
             return best
         }
-        let last = shape.count - 2
-        var best = nearest(in: max(0, segment - 3)...min(last, segment + 80))
+        var best = nearest(from: along - 30, to: along + maxJumpAhead, penalizeJumps: true)
         if best.d > offRouteDistance {
-            best = nearest(in: 0...last)
+            best = nearest(from: nil, to: nil, penalizeJumps: false)  // re-acquire anywhere, e.g. after a detour
         }
-        segment = best.seg
-        let along = cum[best.seg] + best.t * (cum[best.seg + 1] - cum[best.seg])
+        along = cum[best.seg] + best.t * (cum[best.seg + 1] - cum[best.seg])
 
         // Next maneuver ahead of us (index 0 is the "start" instruction).
         let maneuvers = route.maneuvers
@@ -117,6 +139,17 @@ public final class Guidance {
 /// Builds the JSON the watchapp's phone-side JavaScript fetches from 127.0.0.1.
 public enum WatchStep {
     public static let idle: [String: Any] = ["active": false]
+    /// A trip has started but there's no route or GPS fix yet.
+    public static let routing: [String: Any] = ["active": false, "routing": true]
+
+    /// Fixed 24-hour Latin digits whatever the phone's region and 12/24-hour setting,
+    /// since the watch fonts only cover Latin text.
+    private static let etaFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "HH:mm"
+        return f
+    }()
 
     public static func ended(reason: String) -> [String: Any] {
         ["active": false, "ended": true, "reason": reason]
@@ -125,9 +158,7 @@ public enum WatchStep {
     public static func step(_ u: GuidanceUpdate, vietnamese: Bool, now: Date = Date()) -> [String: Any] {
         let km = String(format: "%.1f", u.remainingDistance / 1000)
         let minutes = max(1, Int((u.remainingTime / 60).rounded()))
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        let arrive = formatter.string(from: now.addingTimeInterval(u.remainingTime))
+        let arrive = etaFormatter.string(from: now.addingTimeInterval(u.remainingTime))
         return [
             "active": true,
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,

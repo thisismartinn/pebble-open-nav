@@ -30,13 +30,27 @@ iPhone: Nav Test app ──127.0.0.1──> Pebble app (watchapp JS) ──Bluet
 {"active": true, "maneuver": 3, "distance": 45, "instruction": "Rẽ phải vào Đường 160",
  "remaining": "Còn 8.0 km", "eta": "19 phút · Đến 18:03"}
 {"active": false, "ended": true, "reason": "Bạn đã tới nơi"}
+{"active": false, "routing": true}
 {"active": false}
 ```
 
 Maneuver codes: 1 straight, 2 left, 3 right, 4 slight left, 5 slight right, 6 U-turn, 7 arrive.
-On `ended` the watch shows "Navigation Ended", buzzes, and closes after 4 s. It only does
+The last two mean "finding a route" and "no trip". On `ended` the watch shows
+"Navigation Ended", buzzes, and closes after 4 s. It only does
 this if it saw a real step first, so a leftover `ended` from the previous trip doesn't
 close it right after opening.
+
+## Language
+
+Both apps follow the phone's language: Vietnamese if it's set to Vietnamese,
+English otherwise.
+
+- **iPhone app:** UI texts in `navapp/Resources/{en,vi}.lproj/Localizable.strings`,
+  the permission prompt in `vi.lproj/InfoPlist.strings`, and Valhalla directions in
+  `vi-VN` or `en-US`.
+- **Watchapp:** the JavaScript reads `navigator.language`, which the Pebble iOS app
+  sets to the phone's locale, and sends `Lang` with every message. Until the first
+  message arrives, the watch uses its own language setting.
 
 ## Test on your iPhone
 

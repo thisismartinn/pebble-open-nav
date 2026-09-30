@@ -1,0 +1,37 @@
+/* Nav Test UI strings. Keys are the English text used in the Swift code. */
+
+"Nav Test" = "Nav Test";
+"Route" = "Lộ trình";
+"Destination" = "Điểm đến";
+"Results" = "Kết quả";
+"Route Options" = "Tùy chọn lộ trình";
+"Travel By" = "Phương tiện";
+"Motorbike" = "Xe máy";
+"Car" = "Ô tô";
+"Bicycle" = "Xe đạp";
+"Walk" = "Đi bộ";
+"Search for a place or address" = "Tìm địa điểm hoặc địa chỉ";
+"Getting your location…" = "Đang xác định vị trí…";
+"Finding a route…" = "Đang tìm đường…";
+"Cancel" = "Hủy";
+"Waiting for GPS…" = "Đang chờ GPS…";
+"End Route" = "Kết thúc lộ trình";
+"Remaining" = "Còn lại";
+"Arrival" = "Giờ đến";
+"Navigation Ended" = "Đã kết thúc chỉ đường";
+"New Trip" = "Chuyến đi mới";
+"Precise Location is off, so directions can't follow you turn by turn." = "Vị trí chính xác đang tắt nên không thể chỉ đường theo từng ngã rẽ.";
+"Open Settings" = "Mở Cài đặt";
+"Install Watchapp" = "Cài ứng dụng đồng hồ";
+"Pebble" = "Pebble";
+"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone." = "Mở Nav Test trên Pebble. Chỉ đường được gửi tới đồng hồ qua ứng dụng Pebble trên iPhone này.";
+"Something Went Wrong" = "Đã xảy ra lỗi";
+"OK" = "OK";
+"Location is off for Nav Test. Turn it on in Settings to get directions." = "Nav Test chưa được phép dùng vị trí. Hãy bật trong Cài đặt để nhận chỉ đường.";
+"Stopped on phone" = "Đã dừng trên điện thoại";
+"You have arrived" = "Bạn đã tới nơi";
+"The watch link stopped (%@). Retrying…" = "Mất kết nối với đồng hồ (%@). Đang thử lại…";
+"Not connected yet. Open Nav Test on your Pebble." = "Chưa kết nối. Hãy mở Nav Test trên Pebble.";
+"Checked in %lld s ago · %lld times · longest gap %lld s" = "Kết nối %lld giây trước · %lld lần · gián đoạn lâu nhất %lld giây";
+"Couldn't get a route" = "Không tìm được đường đi";
+"Unnamed place" = "Địa điểm không tên";

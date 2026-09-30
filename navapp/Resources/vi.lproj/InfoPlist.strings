@@ -1,0 +1,7 @@
+/* Vietnamese Info.plist strings (location permission prompts). */
+
+"CFBundleDisplayName" = "Nav Test";
+"NSLocationWhenInUseUsageDescription" = "Dùng để tính lộ trình và cập nhật chỉ đường trong chuyến đi bạn bắt đầu. GPS sẽ tắt khi chuyến đi kết thúc.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Dùng để tính lộ trình và cập nhật chỉ đường trong chuyến đi bạn bắt đầu. GPS sẽ tắt khi chuyến đi kết thúc.";
+/* Purpose key from NSLocationTemporaryUsageDescriptionDictionary */
+"Navigation" = "Chỉ đường theo từng ngã rẽ cần vị trí chính xác để bám theo lộ trình.";
