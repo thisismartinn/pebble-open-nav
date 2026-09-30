@@ -1,4 +1,4 @@
-# Pebble turn-by-turn on iPhone: quick test
+# PebbleOpenNav
 
 A navigation app on the iPhone does the routing and GPS and serves the next step on
 `127.0.0.1:8765`. A Pebble watchapp polls it every 3 s through the Pebble app's
