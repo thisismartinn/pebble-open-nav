@@ -1,0 +1,41 @@
+{
+  "name": "navtest",
+  "author": "MakeAwesomeHappen",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Nav Test",
+    "uuid": "02a3a835-6c45-47cc-932a-eac6dc6fec23",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "Tick",
+      "Maneuver",
+      "Distance",
+      "Instruction",
+      "Remaining",
+      "Eta",
+      "Status",
+      "Ended"
+    ],
+    "resources": {
+      "media": []
+    }
+  }
+}

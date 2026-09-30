@@ -1,0 +1,18 @@
+# Builds an unsigned NavTest.ipa on a GitHub macOS runner (which has Xcode).
+# Download it from the run's "Artifacts" section, then install with Sideloadly or AltStore.
+name: Build iPhone app
+on:
+  workflow_dispatch:
+  push:
+    paths: ["navapp/**", ".github/workflows/build-ipa.yml"]
+jobs:
+  ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: navapp/scripts/build-ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NavTest-ipa
+          path: navapp/build/NavTest.ipa

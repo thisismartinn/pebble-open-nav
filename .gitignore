@@ -1,0 +1,7 @@
+navtest/build/*
+!navtest/build/navtest.pbw
+navtest/screenshots/
+navapp/build/
+navapp/*.xcodeproj
+.DS_Store
+navtest/.lock-waf*
