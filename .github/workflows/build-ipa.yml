@@ -1,4 +1,4 @@
-# Builds an unsigned NavTest.ipa on a GitHub macOS runner.
+# Builds an unsigned PebbleOpenNav.ipa on a GitHub macOS runner.
 # Download it from the run's "Artifacts" section, then install with Sideloadly or AltStore.
 #
 # Liquid Glass needs the iOS 26+ SDK, so this uses the macos-26 image and the newest
@@ -44,5 +44,5 @@ jobs:
       - run: navapp/scripts/build-ipa.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: NavTest-ipa
-          path: navapp/build/NavTest.ipa
+          name: PebbleOpenNav-ipa
+          path: navapp/build/PebbleOpenNav.ipa

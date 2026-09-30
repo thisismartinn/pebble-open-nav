@@ -9,6 +9,7 @@ import UIKit
 /// follows Dynamic Type, Dark Mode and the system accent colour.
 struct ContentView: View {
     @StateObject private var nav = NavigationController()
+    @StateObject private var search = SearchModel()
     @Environment(\.scenePhase) private var scenePhase
     @State private var camera: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var detent: PresentationDetent = ContentView.collapsed
@@ -32,7 +33,7 @@ struct ContentView: View {
             MapScaleView()
         }
         .sheet(isPresented: .constant(true)) {
-            TripSheet(nav: nav, detent: $detent)
+            TripSheet(nav: nav, search: search, detent: $detent)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                 .presentationDragIndicator(.visible)
@@ -58,6 +59,7 @@ struct ContentView: View {
 
 private struct TripSheet: View {
     @ObservedObject var nav: NavigationController
+    @ObservedObject var search: SearchModel
     @Binding var detent: PresentationDetent
     @State private var searchActive = false
     @Environment(\.openURL) private var openURL
@@ -88,7 +90,7 @@ private struct TripSheet: View {
 
     private var title: String {
         switch nav.phase {
-        case .idle: String(localized: "Nav Test")
+        case .idle: String(localized: "PebbleOpenNav")
         case .routing, .navigating: nav.destinationName ?? String(localized: "Route")
         case .ended: ""
         }
@@ -98,12 +100,13 @@ private struct TripSheet: View {
 
     private var searchList: some View {
         List {
-            if nav.searching {
+            if search.searching {
                 ProgressView().frame(maxWidth: .infinity)
-            } else if !nav.results.isEmpty {
+            } else if !search.results.isEmpty {
                 Section("Results") {
-                    ForEach(nav.results) { place in
+                    ForEach(search.results) { place in
                         Button {
+                            search.reset()
                             nav.start(to: place)
                         } label: {
                             PlaceRow(place: place)
@@ -111,7 +114,7 @@ private struct TripSheet: View {
                         .tint(.primary)
                     }
                 }
-            } else if let searched = nav.lastSearch, searched == nav.query {
+            } else if let searched = search.lastSearch, searched == search.query {
                 ContentUnavailableView.search(text: searched)
             }
 
@@ -125,10 +128,13 @@ private struct TripSheet: View {
             watchSection
         }
         .sheetGlassListBackground(detent)
-        .searchable(text: $nav.query, isPresented: $searchActive,
+        .searchable(text: $search.query, isPresented: $searchActive,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search for a place or address")
-        .onSubmit(of: .search) { nav.search() }
+        .onSubmit(of: .search) {
+            search.near = nav.location
+            search.search()
+        }
         .onChange(of: searchActive) { _, active in
             if active {
                 detent = .large
@@ -240,7 +246,7 @@ private struct TripSheet: View {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
             }
-            if let pbw = Bundle.main.url(forResource: "navtest", withExtension: "pbw") {
+            if let pbw = Bundle.main.url(forResource: "PebbleOpenNav", withExtension: "pbw") {
                 ShareLink(item: pbw) {
                     Label("Install Watchapp", systemImage: "square.and.arrow.up")
                 }
@@ -248,7 +254,7 @@ private struct TripSheet: View {
         } header: {
             Text("Pebble")
         } footer: {
-            Text("Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.")
+            Text("Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.")
         }
     }
 }

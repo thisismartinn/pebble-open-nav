@@ -8,7 +8,7 @@
   "private": true,
   "dependencies": {},
   "pebble": {
-    "displayName": "Nav Test",
+    "displayName": "PebbleOpenNav",
     "uuid": "02a3a835-6c45-47cc-932a-eac6dc6fec23",
     "sdkVersion": "3",
     "enableMultiJS": true,

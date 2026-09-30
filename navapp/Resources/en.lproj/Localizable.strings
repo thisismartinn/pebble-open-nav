@@ -1,6 +1,6 @@
-/* Nav Test UI strings. Keys are the English text used in the Swift code. */
+/* PebbleOpenNav UI strings. Keys are the English text used in the Swift code. */
 
-"Nav Test" = "Nav Test";
+"PebbleOpenNav" = "PebbleOpenNav";
 "Route" = "Route";
 "Destination" = "Destination";
 "Results" = "Results";
@@ -26,18 +26,18 @@
 "Pebble" = "Pebble";
 "Something Went Wrong" = "Something Went Wrong";
 "OK" = "OK";
-"Location is off for Nav Test. Turn it on in Settings to get directions." = "Location is off for Nav Test. Turn it on in Settings to get directions.";
+"Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "Location is off for PebbleOpenNav. Turn it on in Settings to get directions.";
 "Stopped on phone" = "Stopped on phone";
 "You have arrived" = "You have arrived";
 "The watch link stopped (%@). Retrying…" = "The watch link stopped (%@). Retrying…";
-"Not connected yet. Open Nav Test on your Pebble." = "Not connected yet. Open Nav Test on your Pebble.";
+"Not connected yet. Open PebbleOpenNav on your Pebble." = "Not connected yet. Open PebbleOpenNav on your Pebble.";
 "Checked in %lld s ago · %lld times · longest gap %lld s" = "Checked in %lld s ago · %lld times · longest gap %lld s";
 "Couldn't get a route" = "Couldn't get a route";
 "Unnamed place" = "Unnamed place";
 "There are no roads near this place." = "There are no roads near this place.";
 "No route found to this place." = "No route found to this place.";
 "This trip is too long to route." = "This trip is too long to route.";
-"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset." = "Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.";
+"Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset." = "Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.";
 "Watch Display" = "Watch Display";
 "Automatic" = "Automatic";
 "Light" = "Light";

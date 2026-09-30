@@ -1,5 +1,5 @@
-# XcodeGen spec: `xcodegen generate` turns this into NavTest.xcodeproj.
-name: NavTest
+# XcodeGen spec: `xcodegen generate` turns this into PebbleOpenNav.xcodeproj.
+name: PebbleOpenNav
 options:
   bundleIdPrefix: local.pebblenav
   developmentLanguage: en
@@ -8,21 +8,24 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2"
+    CURRENT_PROJECT_VERSION: "2"
 targets:
-  NavTest:
+  PebbleOpenNav:
     type: application
     platform: iOS
     sources:
       - Sources/Core
       - Sources/App
+      - Sources/Shared
       - path: Resources
         buildPhase: resources
+    dependencies:
+      - target: PebbleOpenNavWidgets  # Live Activity (Lock Screen / Dynamic Island)
     info:
       path: Sources/App/Info.plist
       properties:
-        CFBundleDisplayName: Nav Test
+        CFBundleDisplayName: PebbleOpenNav
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
@@ -30,6 +33,7 @@ targets:
         # GPS keeps running while locked during a trip; that also keeps the
         # 127.0.0.1 server the Pebble watchapp polls alive.
         UIBackgroundModes: [location]
+        NSSupportsLiveActivities: true
         NSLocationWhenInUseUsageDescription: Used to calculate the route and update directions during a trip you start. GPS stops when the trip ends.
         NSLocationAlwaysAndWhenInUseUsageDescription: Used to calculate the route and update directions during a trip you start. GPS stops when the trip ends.
         # Asked for with requestTemporaryFullAccuracyAuthorization when Precise Location is off.
@@ -37,5 +41,25 @@ targets:
           Navigation: Turn-by-turn directions need your precise location to follow the route.
     settings:
       base:
+        # Unchanged from the "Nav Test" builds so the app installs over them and keeps its settings.
         PRODUCT_BUNDLE_IDENTIFIER: local.pebblenav.navtest
+        TARGETED_DEVICE_FAMILY: "1"
+
+  PebbleOpenNavWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Sources/Widget
+      - Sources/Shared
+    info:
+      path: Sources/Widget/Info.plist
+      properties:
+        CFBundleDisplayName: PebbleOpenNav
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.pebblenav.navtest.widgets
         TARGETED_DEVICE_FAMILY: "1"

@@ -1,0 +1,484 @@
+##### [asterix/light] asterix/nagivation/normal
+FRAME "asterix/nagivation/normal" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 11" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "3.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=59 y=2 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=59 y=2 w=28 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=9 y=27.5 w=63 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=25 y=57.5 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=92 y=26.5 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#F9F9F9 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=2 y=88 w=140 h=72 fill=#000000 font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [asterix/light] asterix/start
+FRAME "asterix/start" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 3" x=0 y=0 w=144 h=168 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=11.6 w=124 h=119.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=70.7 y=11.6 w=31.2 h=33.8 fill=#000000
+      TEXT "Start navigation on the mobile app" x=10 y=59.4 w=124 h=72 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=141.4 w=124 h=15 fill=#000000 font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"
+##### [asterix/light] asterix/nagivation/normal2
+FRAME "asterix/nagivation/normal2" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 12" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=65 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=65 y=2 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=30 y=27.5 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=25 y=57.5 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=136 y=26.5 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#F9F9F9 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=2 y=88 w=140 h=72 fill=#000000 font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Turn left onto Kim Ma"
+##### [asterix/light] asterix/nagivation/arriving
+FRAME "asterix/nagivation/arriving" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 13" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=65 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=65 y=2 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=30 y=27.5 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=43 y=57.5 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=92 y=26.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=91 y=29 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=91 y=29 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=99.2 y=37.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#F9F9F9 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=2 y=88 w=140 h=72 fill=#000000 font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Arriving at destination"
+##### [asterix/light] asterix/nagivation/end
+FRAME "asterix/nagivation/end" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 4" x=0 y=0 w=144 h=168 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=35.6 w=124 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=70.7 y=35.6 w=31.2 h=33.8 fill=#000000
+      TEXT "You have arrived" x=10 y=83.4 w=124 h=24 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=117.4 w=124 h=15 fill=#000000 font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [asterix/light] asterix/nagivation/disconnected
+FRAME "asterix/nagivation/disconnected" x=0 y=0 w=144 h=168 fill=#FFFFFF
+  FRAME "Frame 14" x=0 y=0 w=144 h=169 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=136 h=17 fill=#000000 font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=8 y=26 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=30 y=28.5 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=43 y=58.5 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=92 y=27.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=91 y=30 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=91 y=30 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=99.2 y=38.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=86 w=144 h=83 fill=#F9F9F9 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=2 y=89 w=140 h=72 fill=#000000 font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Disconnected"
+##### [asterix/dark] asterix/nagivation/end
+FRAME "asterix/nagivation/end" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 4" x=0 y=0 w=144 h=168 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=35.6 w=124 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=70.7 y=35.6 w=31.2 h=33.8 fill=#FFFFFF
+      TEXT "You have arrived" x=10 y=83.4 w=124 h=24 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=117.4 w=124 h=15 fill=#FFFFFF font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [asterix/dark] asterix/start
+FRAME "asterix/start" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 3" x=0 y=0 w=144 h=168 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=11.6 w=124 h=119.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=70.7 y=11.6 w=31.2 h=33.8 fill=#FFFFFF
+      TEXT "Start navigation on the mobile app" x=10 y=59.4 w=124 h=72 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=141.4 w=124 h=15 fill=#FFFFFF font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"
+##### [asterix/dark] asterix/nagivation/normal
+FRAME "asterix/nagivation/normal" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 11" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "3.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=59 y=2 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=59 y=2 w=28 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=9 y=27.5 w=63 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=25 y=57.5 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=92 y=26.5 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#303030 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=2 y=88 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [asterix/dark] asterix/nagivation/normal2
+FRAME "asterix/nagivation/normal2" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 12" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=65 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=65 y=2 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=30 y=27.5 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=25 y=57.5 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=136 y=26.5 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#303030 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=2 y=88 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Turn left onto Kim Ma"
+##### [asterix/dark] asterix/nagivation/arriving
+FRAME "asterix/nagivation/arriving" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 13" x=0 y=0 w=144 h=168 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=65 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=65 y=2 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=95 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=8 y=25 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=30 y=27.5 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=43 y=57.5 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=92 y=26.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=91 y=29 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=91 y=29 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=99.2 y=37.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=85 w=144 h=83 fill=#303030 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=2 y=88 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Arriving at destination"
+##### [asterix/dark] asterix/nagivation/disconnected
+FRAME "asterix/nagivation/disconnected" x=0 y=0 w=144 h=168 fill=#000000
+  FRAME "Frame 14" x=0 y=0 w=144 h=169 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=144 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=136 h=17 fill=#FFFFFF font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=144 h=65 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=8 y=26 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=30 y=28.5 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=43 y=58.5 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=92 y=27.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=91 y=30 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=91 y=30 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=99.2 y=38.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=86 w=144 h=83 fill=#303030 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=2 y=89 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/TOP "Disconnected"
+##### [obelix/light] obelix/nagivation/normal
+FRAME "obelix/nagivation/normal" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 11" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "3.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=115 y=2 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=115 y=2 w=28 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=37 y=49 w=63 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=53 y=79 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=120 y=48 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=30 y=131 w=140 h=89 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [obelix/light] obelix/nagivation/normal2
+FRAME "obelix/nagivation/normal2" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 12" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=121 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=121 y=2 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=58 y=49 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=53 y=79 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=164 y=48 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=30 y=139.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Turn left onto Kim Ma"
+##### [obelix/light] obelix/nagivation/arriving
+FRAME "obelix/nagivation/arriving" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 13" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=121 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=121 y=2 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=58 y=49 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=71 y=79 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=120 y=48 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=119 y=50.5 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=119 y=50.5 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=127.2 y=58.7 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=30 y=139.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Arriving at destination"
+##### [obelix/light] obelix/nagivation/disconnected
+FRAME "obelix/nagivation/disconnected" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 14" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=192 h=17 fill=#000000 font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=200 h=107 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=36 y=47 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=58 y=49.5 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=71 y=79.5 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=120 y=48.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=119 y=51 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=119 y=51 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=127.2 y=59.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#B50000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=30 y=139.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Disconnected"
+##### [obelix/light] obelix/nagivation/end
+FRAME "obelix/nagivation/end" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 4" x=0 y=0 w=200 h=228 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=65.6 w=180 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=98.7 y=65.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "You have arrived" x=10 y=113.4 w=180 h=24 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=147.4 w=180 h=15 fill=#000000 font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [obelix/light] obelix/start
+FRAME "obelix/start" x=0 y=0 w=200 h=228 fill=#FFFFFF
+  FRAME "Frame 3" x=0 y=0 w=200 h=228 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=53.6 w=180 h=95.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=98.7 y=53.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "Start navigation on the mobile app" x=10 y=101.4 w=180 h=48 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=159.4 w=180 h=15 fill=#000000 font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"
+##### [obelix/dark] obelix/nagivation/normal
+FRAME "obelix/nagivation/normal" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 11" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "3.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=115 y=2 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=115 y=2 w=28 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=37 y=49 w=63 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=53 y=79 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=120 y=48 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=30 y=131 w=140 h=89 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [obelix/dark] obelix/nagivation/normal2
+FRAME "obelix/nagivation/normal2" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 12" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=121 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=121 y=2 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=58 y=49 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=53 y=79 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=164 y=48 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=30 y=139.5 w=140 h=72 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Turn left onto Kim Ma"
+##### [obelix/dark] obelix/nagivation/arriving
+FRAME "obelix/nagivation/arriving" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 13" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=20 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "1.7km" x=4 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=121 y=2 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=121 y=2 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=151 y=2 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=20 w=200 h=108 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=36 y=46.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=58 y=49 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=71 y=79 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=120 y=48 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=119 y=50.5 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=119 y=50.5 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=127.2 y=58.7 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=30 y=139.5 w=140 h=72 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Arriving at destination"
+##### [obelix/dark] obelix/nagivation/disconnected
+FRAME "obelix/nagivation/disconnected" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 14" x=0 y=0 w=200 h=228 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=200 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=192 h=17 fill=#FFFFFF font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=200 h=107 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=36 y=47 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=58 y=49.5 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=71 y=79.5 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=120 y=48.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=119 y=51 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=119 y=51 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=127.2 y=59.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=128 w=200 h=100 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=30 y=139.5 w=140 h=72 fill=#B50000 font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Disconnected"
+##### [obelix/dark] obelix/nagivation/end
+FRAME "obelix/nagivation/end" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 4" x=0 y=0 w=200 h=228 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=65.6 w=180 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=98.7 y=65.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "You have arrived" x=10 y=113.4 w=180 h=24 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=147.4 w=180 h=15 fill=#FFFFFF font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [obelix/dark] obelix/start
+FRAME "obelix/start" x=0 y=0 w=200 h=228 fill=#000000
+  FRAME "Frame 3" x=0 y=0 w=200 h=228 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=53.6 w=180 h=95.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=98.7 y=53.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "Start navigation on the mobile app" x=10 y=101.4 w=180 h=48 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=159.4 w=180 h=15 fill=#FFFFFF font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"
+##### [getafix/light] getafix/nagivation/normal
+FRAME "getafix/nagivation/normal" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 11" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "3.7km" x=113.5 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=89.5 y=22 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=89.5 y=22 w=28 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=125.5 y=22 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=67 y=60 w=63 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=83 y=90 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=150 y=59 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=60 y=133 w=140 h=119 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [getafix/light] getafix/nagivation/normal2
+FRAME "getafix/nagivation/normal2" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 12" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "1.7km" x=113.5 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=92.5 y=22 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=92.5 y=22 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=122.5 y=22 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=88 y=60 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=83 y=90 w=47 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=194 y=59 w=44 h=52 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=60 y=156.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Turn left onto Kim Ma"
+##### [getafix/light] getafix/nagivation/arriving
+FRAME "getafix/nagivation/arriving" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 13" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "1.7km" x=113.5 y=2 w=33 h=16 fill=#000000 font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=92.5 y=22 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=92.5 y=22 w=22 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=122.5 y=22 w=45 h=16 fill=#000000 font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=88 y=60 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=101 y=90 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=150 y=59 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=149 y=61.5 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=149 y=61.5 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=157.2 y=69.7 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#00B50F auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=60 y=156.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Arriving at destination"
+##### [getafix/light] getafix/nagivation/disconnected
+FRAME "getafix/nagivation/disconnected" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 14" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=252 h=17 fill=#000000 font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=260 h=109 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=66 y=48 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=88 y=50.5 w=42 h=30 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=101 y=80.5 w=29 h=20 fill=#000000 font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=150 y=49.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=149 y=52 w=46 h=46 fill=#000000
+          VECTOR "Ellipse 2 (Stroke)" x=149 y=52 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=157.2 y=60.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#B50000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=60 y=156.5 w=140 h=72 fill=#FFFFFF font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Disconnected"
+##### [getafix/light] getafix/nagivation/end
+FRAME "getafix/nagivation/end" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 4" x=0 y=0 w=260 h=260 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=80.6 w=240 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=128.7 y=80.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "You have arrived" x=10 y=128.4 w=240 h=24 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=162.4 w=240 h=17 fill=#000000 font="Renaissance 14 Bold" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [getafix/light] getafix/start
+FRAME "getafix/start" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 3" x=0 y=0 w=260 h=260 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=69.6 w=240 h=95.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=128.7 y=69.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "Start navigation on the mobile app" x=10 y=117.4 w=240 h=48 fill=#000000 font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=175.4 w=240 h=15 fill=#000000 font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"
+##### [getafix/dark] getafix/nagivation/normal
+FRAME "getafix/nagivation/normal" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#000000
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 11" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "3.7km" x=113.5 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "3.7km"
+      FRAME "Frame 4" x=89.5 y=22 w=81 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "11min" x=89.5 y=22 w=28 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "11min"
+        TEXT "ETA 19:25" x=125.5 y=22 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "800" x=67 y=60 w=63 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "800"
+        TEXT "m" x=83 y=90 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      VECTOR "Vector 1 (Stroke)" x=150 y=59 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai" x=60 y=133 w=140 h=119 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Make a left U-turn at Pho Lieu Giai  to stay in  Pho Lieu Giai"
+##### [getafix/dark] getafix/nagivation/normal2
+FRAME "getafix/nagivation/normal2" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#000000
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 12" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "1.7km" x=113.5 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=92.5 y=22 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=92.5 y=22 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=122.5 y=22 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 7" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "1.2" x=88 y=60 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "1.2"
+        TEXT "km" x=83 y=90 w=47 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "km"
+      VECTOR "Vector 1 (Stroke)" x=194 y=59 w=44 h=52 fill=#FFFFFF
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Turn left onto Kim Ma" x=60 y=156.5 w=140 h=72 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Turn left onto Kim Ma"
+##### [getafix/dark] getafix/nagivation/arriving
+FRAME "getafix/nagivation/arriving" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#000000
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 13" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=40 auto=VERTICAL gap=4 pad=2/4/2/4 align=CENTER/CENTER
+      TEXT "1.7km" x=113.5 y=2 w=33 h=16 fill=#FFFFFF font="Renaissance 18 Bold" 15px lh=100% LEFT/CENTER "1.7km"
+      FRAME "Frame 4" x=92.5 y=22 w=75 h=16 auto=HORIZONTAL gap=8 pad=0/0/0/0 align=/CENTER
+        TEXT "2min" x=92.5 y=22 w=22 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "2min"
+        TEXT "ETA 19:25" x=122.5 y=22 w=45 h=16 fill=#FFFFFF font="Renaissance 18 Regular" 14px lh=100% LEFT/CENTER "ETA 19:25"
+    FRAME "Frame 7" x=0 y=40 w=260 h=90 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=66 y=57.5 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=88 y=60 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=101 y=90 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=150 y=59 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=149 y=61.5 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=149 y=61.5 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=157.2 y=69.7 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Arriving at destination" x=60 y=156.5 w=140 h=72 fill=#CAB8AC font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Arriving at destination"
+##### [getafix/dark] getafix/nagivation/disconnected
+FRAME "getafix/nagivation/disconnected" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#000000
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 14" x=0 y=0 w=260 h=260 auto=VERTICAL gap=0 pad=0/0/0/0 align=/
+    FRAME "Frame 5" x=0 y=0 w=260 h=21 auto=HORIZONTAL gap=23 pad=2/4/2/4 align=SPACE_BETWEEN/CENTER
+      TEXT "Disconnected" x=4 y=2 w=252 h=17 fill=#FFFFFF font="Renaissance 18 Regular" 15px lh=100% CENTER/CENTER "Disconnected"
+    FRAME "Frame 7" x=0 y=21 w=260 h=109 auto=HORIZONTAL gap=20 pad=5/4/5/4 align=CENTER/CENTER
+      FRAME "Frame 6" x=66 y=48 w=64 h=55 auto=VERTICAL gap=0 pad=5/0/5/0 align=CENTER/MAX
+        TEXT "40" x=88 y=50.5 w=42 h=30 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "40"
+        TEXT "m" x=101 y=80.5 w=29 h=20 fill=#FFFFFF font="Metropolis Black" 30px lh=100% RIGHT/CENTER "m"
+      FRAME "Frame 10" x=150 y=49.5 w=44 h=52
+        BOOLEAN_OPERATION "Union" x=149 y=52 w=46 h=46 fill=#FFFFFF
+          VECTOR "Ellipse 2 (Stroke)" x=149 y=52 w=46 h=46 fill=#000000
+          ELLIPSE "Ellipse 1" x=157.2 y=60.2 w=29.6 h=29.6 fill=#000000
+    FRAME "Frame 8" x=0 y=130 w=260 h=130 fill=#000000 auto=HORIZONTAL gap=10 pad=3/2/8/2 align=CENTER/CENTER
+      TEXT "Disconnected" x=60 y=156.5 w=140 h=72 fill=#B50000 font="Renaissance 18 Bold" 18px lh=18px CENTER/CENTER "Disconnected"
+##### [getafix/dark] getafix/nagivation/end
+FRAME "getafix/nagivation/end" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 4" x=0 y=0 w=260 h=260 fill=#000000
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#FFFFFF
+  FRAME "Frame 4" x=0 y=0 w=260 h=260 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=80.6 w=240 h=71.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=128.7 y=80.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "You have arrived" x=10 y=128.4 w=240 h=24 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "You have arrived"
+    TEXT "Navigation ended" x=10 y=162.4 w=240 h=17 fill=#FFFFFF font="Renaissance 14 Bold" 14px lh=100% CENTER/TOP "Navigation ended"
+##### [getafix/dark] getafix/start
+FRAME "getafix/start" x=0 y=0 w=260 h=260
+  ELLIPSE "Ellipse 3" x=0 y=0 w=260 h=260 fill=#000000
+  FRAME "Frame 3" x=0 y=0 w=260 h=260 auto=VERTICAL gap=10 pad=10/10/10/10 align=CENTER/CENTER
+    FRAME "Frame 9" x=10 y=69.6 w=240 h=95.9 auto=VERTICAL gap=2 pad=0/0/0/0 align=/CENTER
+      VECTOR "Polygon 1" x=128.7 y=69.6 w=31.2 h=33.8 fill=#00B50F
+      TEXT "Start navigation on the mobile app" x=10 y=117.4 w=240 h=48 fill=#FFFFFF font="Renaissance 24 Bold" 24px lh=100% CENTER/TOP "Start navigation on the\nmobile app"
+    TEXT "GPS in 0.0s, +8m" x=10 y=175.4 w=240 h=15 fill=#FFFFFF font="Renaissance 14 Regular" 14px lh=100% CENTER/TOP "GPS in 0.0s, +8m"

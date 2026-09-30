@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct NavTestApp: App {
+struct PebbleOpenNavApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -3,6 +3,18 @@ import Foundation
 
 /// Ties GPS, routing and guidance together, and publishes each step to the
 /// local server the Pebble watchapp polls. GPS runs only during a trip.
+/// Whether the Pebble watchapp is polling, for the Pebble section of the UI.
+struct WatchLinkStatus: Equatable {
+    /// The watch checked in within the last 10 s.
+    var connected = false
+    /// Last check-in, if any.
+    var lastCheckIn: Date?
+    /// Check-ins since the watchapp was opened (or the trip started).
+    var count = 0
+    /// Longest gap between check-ins while the watchapp was open.
+    var longestGap: TimeInterval = 0
+}
+
 /// Watch colour theme. Light is easier to read in sunlight on colour watches.
 enum WatchTheme: String, CaseIterable, Identifiable {
     case automatic, light, dark
@@ -25,11 +37,6 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     @Published var phase: Phase = .idle
-    @Published var query = ""
-    @Published var results: [OpenMapServices.Place] = []
-    @Published var searching = false
-    /// The last query that finished searching, to tell "no results" from "not searched yet".
-    @Published var lastSearch: String?
     @Published var errorMessage: String?
     @Published var costing: OpenMapServices.Costing = .motorbike
     /// The app follows the phone's language (Vietnamese or English); directions
@@ -43,6 +50,9 @@ final class NavigationController: NSObject, ObservableObject {
     @Published var awaitingFix = false
     @Published var preciseLocationOff = false
     @Published var watchStatus = ""
+    @Published var watchLink = WatchLinkStatus()
+    /// The current or last trip's log (GPS fixes, guidance, watch polls), to share after a ride.
+    @Published var tripLogURL: URL?
     @Published var watchTheme: WatchTheme =
         WatchTheme(rawValue: UserDefaults.standard.string(forKey: "watchTheme") ?? "") ?? .automatic {
         didSet {
@@ -98,34 +108,14 @@ final class NavigationController: NSObject, ObservableObject {
         if phase == .idle { requestLocation() }
     }
 
-    // MARK: Search
+    // MARK: Location
 
     func requestLocation() {
         switch manager.authorizationStatus {
         case .notDetermined: manager.requestWhenInUseAuthorization()
         case .denied, .restricted:
-            errorMessage = String(localized: "Location is off for Nav Test. Turn it on in Settings to get directions.")
+            errorMessage = String(localized: "Location is off for PebbleOpenNav. Turn it on in Settings to get directions.")
         default: manager.requestLocation()
-        }
-    }
-
-    func search() {
-        let text = query.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else {
-            results = []
-            lastSearch = nil
-            return
-        }
-        searching = true
-        let near = location.map { Coordinate(lat: $0.coordinate.latitude, lon: $0.coordinate.longitude) }
-        Task {
-            defer { searching = false }
-            do {
-                results = try await OpenMapServices.search(text, near: near)
-                lastSearch = text
-            } catch {
-                errorMessage = error.localizedDescription
-            }
         }
     }
 
@@ -136,9 +126,6 @@ final class NavigationController: NSObject, ObservableObject {
         shutdownTask = nil
         destination = place
         destinationName = place.name
-        results = []
-        lastSearch = nil
-        query = ""
         route = nil
         update = nil
         guidance = nil
@@ -162,11 +149,12 @@ final class NavigationController: NSObject, ObservableObject {
         awaitingFix = false
         phase = .idle
         publish(.idle)
+        LiveActivityController.shared.end(arrived: false)
         stopGPS()
     }
 
     func stop() {
-        finish(reason: String(localized: "Stopped on phone"))
+        finish(arrived: false)
     }
 
     /// Back to search. The watch keeps getting "ended" until the next trip
@@ -195,6 +183,7 @@ final class NavigationController: NSObject, ObservableObject {
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
             self.route = route
             guidance = Guidance(route: route)
+            if phase == .routing { LiveActivityController.shared.start(destinationName: destinationName ?? "") }
             phase = .navigating
             if let location { handle(location) }
         } catch {
@@ -220,10 +209,11 @@ final class NavigationController: NSObject, ObservableObject {
         guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy, course: course) else { return }
         update = u
         if u.arrived {
-            finish(reason: String(localized: "You have arrived"))
+            finish(arrived: true)
             return
         }
         publish(.step(u))
+        LiveActivityController.shared.update(u, vietnamese: vietnamese)
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
             lastReroute = Date()
             let trip = tripID
@@ -231,8 +221,10 @@ final class NavigationController: NSObject, ObservableObject {
         }
     }
 
-    private func finish(reason: String) {
+    private func finish(arrived: Bool) {
+        let reason = arrived ? String(localized: "You have arrived") : String(localized: "Stopped on phone")
         publish(.ended(reason))
+        LiveActivityController.shared.end(arrived: arrived)
         phase = .ended(reason)
         guidance = nil
         tripID = nil
@@ -330,9 +322,11 @@ final class NavigationController: NSObject, ObservableObject {
     private func refreshWatchStatus() {
         let stats = server.pollStats
         guard let last = stats.last else {
-            watchStatus = String(localized: "Not connected yet. Open Nav Test on your Pebble.")
+            watchStatus = String(localized: "Not connected yet. Open PebbleOpenNav on your Pebble.")
             return
         }
+        watchLink = WatchLinkStatus(connected: Date().timeIntervalSince(last) < 10, lastCheckIn: last,
+                                    count: stats.count, longestGap: stats.maxGap)
         let ago = Int(Date().timeIntervalSince(last))
         let gap = Int(stats.maxGap)
         watchStatus = String(localized: "Checked in \(ago) s ago · \(stats.count) times · longest gap \(gap) s")
