@@ -24,7 +24,6 @@
 "Open Settings" = "Mở Cài đặt";
 "Install Watchapp" = "Cài ứng dụng đồng hồ";
 "Pebble" = "Pebble";
-"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone." = "Mở Nav Test trên Pebble. Chỉ đường được gửi tới đồng hồ qua ứng dụng Pebble trên iPhone này.";
 "Something Went Wrong" = "Đã xảy ra lỗi";
 "OK" = "OK";
 "Location is off for Nav Test. Turn it on in Settings to get directions." = "Nav Test chưa được phép dùng vị trí. Hãy bật trong Cài đặt để nhận chỉ đường.";
@@ -38,3 +37,8 @@
 "There are no roads near this place." = "Không có đường nào gần địa điểm này.";
 "No route found to this place." = "Không tìm thấy đường đến địa điểm này.";
 "This trip is too long to route." = "Chuyến đi quá dài để tìm đường.";
+"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset." = "Mở Nav Test trên Pebble. Chỉ đường được gửi tới đồng hồ qua ứng dụng Pebble trên iPhone này. Chế độ Tự động dùng giao diện sáng từ lúc mặt trời mọc đến lúc lặn.";
+"Watch Display" = "Màn hình đồng hồ";
+"Automatic" = "Tự động";
+"Light" = "Sáng";
+"Dark" = "Tối";

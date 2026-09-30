@@ -55,6 +55,25 @@ English otherwise.
   and reports e.g. `en_VN` on a Vietnamese phone.
 - Vietnamese uses a decimal comma for distances ("Còn 8,4 km").
 
+## Watch display
+
+Light theme (white background, dark text) on every watch, colour or black-and-white,
+because it's easier to read in sunlight. It's set in the iPhone app under
+**Pebble → Watch Display**:
+
+- **Automatic** (default): light between sunrise and sunset at your GPS position,
+  from `Sources/Core/Sun.swift`.
+- **Light** or **Dark**: always that theme.
+
+Every payload carries `"theme": "light" | "dark"`. The watch remembers the last theme
+for its next launch.
+
+## Liquid Glass
+
+The iPhone app only gets the iOS 26 look when built with the iOS 26+ SDK, so CI
+uses the `macos-26` runner with its newest stable Xcode. `build-ipa.sh` fails if the
+built app's `DTSDKName` is older than `iphoneos26`.
+
 ## Test on your iPhone
 
 ### 1. Background test (works now, no .ipa needed)

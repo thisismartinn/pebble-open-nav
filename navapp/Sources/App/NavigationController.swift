@@ -3,10 +3,24 @@ import Foundation
 
 /// Ties GPS, routing and guidance together, and publishes each step to the
 /// local server the Pebble watchapp polls. GPS runs only during a trip.
+/// Watch colour theme. Light is easier to read in sunlight on colour watches.
+enum WatchTheme: String, CaseIterable, Identifiable {
+    case automatic, light, dark
+    var id: String { rawValue }
+}
+
 @MainActor
 final class NavigationController: NSObject, ObservableObject {
     enum Phase: Equatable {
         case idle, routing, navigating
+        case ended(String)
+    }
+
+    /// What the watch is currently being told, so it can be re-sent when a
+    /// setting changes.
+    private enum WatchPayload {
+        case idle, routing
+        case step(GuidanceUpdate)
         case ended(String)
     }
 
@@ -29,6 +43,13 @@ final class NavigationController: NSObject, ObservableObject {
     @Published var awaitingFix = false
     @Published var preciseLocationOff = false
     @Published var watchStatus = ""
+    @Published var watchTheme: WatchTheme =
+        WatchTheme(rawValue: UserDefaults.standard.string(forKey: "watchTheme") ?? "") ?? .automatic {
+        didSet {
+            UserDefaults.standard.set(watchTheme.rawValue, forKey: "watchTheme")
+            republish()
+        }
+    }
     @Published var serverProblem: String?
 
     private let manager = CLLocationManager()
@@ -41,6 +62,7 @@ final class NavigationController: NSObject, ObservableObject {
     private var lastReroute = Date.distantPast
     private var statusTimer: Timer?
     private var shutdownTask: Task<Void, Never>?
+    private var payload: WatchPayload = .idle
 
     /// After a trip ends, keep running this long so the watch (polling every
     /// 3 s) can still fetch "ended" with the phone locked. Stopping GPS lets
@@ -54,7 +76,7 @@ final class NavigationController: NSObject, ObservableObject {
         server.onStateChange = { [weak self] state in
             Task { @MainActor in self?.serverStateChanged(state) }
         }
-        server.publish(WatchStep.idle(vietnamese: vietnamese))
+        publish(.idle)
         server.start()
         refreshWatchStatus()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -118,7 +140,7 @@ final class NavigationController: NSObject, ObservableObject {
         awaitingFix = true
         server.start()
         server.resetStats()
-        server.publish(WatchStep.routing(vietnamese: vietnamese))
+        publish(.routing)
         startGPS()
         refreshAccuracy()
         // Route from a fresh fix: `location` may be minutes old if the app was in the background.
@@ -132,7 +154,7 @@ final class NavigationController: NSObject, ObservableObject {
         destinationName = nil
         awaitingFix = false
         phase = .idle
-        server.publish(WatchStep.idle(vietnamese: vietnamese))
+        publish(.idle)
         stopGPS()
     }
 
@@ -194,7 +216,7 @@ final class NavigationController: NSObject, ObservableObject {
             finish(reason: String(localized: "You have arrived"))
             return
         }
-        server.publish(WatchStep.step(u, vietnamese: vietnamese))
+        publish(.step(u))
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
             lastReroute = Date()
             let trip = tripID
@@ -203,7 +225,7 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     private func finish(reason: String) {
-        server.publish(WatchStep.ended(reason: reason, vietnamese: vietnamese))
+        publish(.ended(reason))
         phase = .ended(reason)
         guidance = nil
         tripID = nil
@@ -257,6 +279,36 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     // MARK: Watch link
+
+    private func publish(_ newPayload: WatchPayload) {
+        payload = newPayload
+        republish()
+    }
+
+    private func republish() {
+        let ctx = WatchContext(vietnamese: vietnamese, light: watchIsLight)
+        switch payload {
+        case .idle: server.publish(WatchStep.idle(ctx))
+        case .routing: server.publish(WatchStep.routing(ctx))
+        case .step(let u): server.publish(WatchStep.step(u, ctx))
+        case .ended(let reason): server.publish(WatchStep.ended(reason: reason, ctx))
+        }
+    }
+
+    /// Automatic: light between sunrise and sunset where you are (6:00–18:00
+    /// until there's a location). Re-evaluated on every GPS fix during a trip,
+    /// so it switches at sunset mid-ride.
+    var watchIsLight: Bool {
+        switch watchTheme {
+        case .light: return true
+        case .dark: return false
+        case .automatic:
+            guard let c = location?.coordinate else {
+                return (6..<18).contains(Calendar.current.component(.hour, from: Date()))
+            }
+            return Sun.isUp(at: Date(), at: Coordinate(lat: c.latitude, lon: c.longitude))
+        }
+    }
 
     private func serverStateChanged(_ state: StepServer.State) {
         switch state {

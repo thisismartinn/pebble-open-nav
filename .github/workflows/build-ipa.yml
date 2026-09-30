@@ -1,5 +1,8 @@
-# Builds an unsigned NavTest.ipa on a GitHub macOS runner (which has Xcode).
+# Builds an unsigned NavTest.ipa on a GitHub macOS runner.
 # Download it from the run's "Artifacts" section, then install with Sideloadly or AltStore.
+#
+# Liquid Glass needs the iOS 26+ SDK, so this uses the macos-26 image and the newest
+# stable (non-beta) Xcode 26+ on it; build-ipa.sh fails the build if the SDK is older.
 name: Build iPhone app
 on:
   workflow_dispatch:
@@ -7,9 +10,36 @@ on:
     paths: ["navapp/**", ".github/workflows/build-ipa.yml"]
 jobs:
   ipa:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+      - name: Select newest stable Xcode 26+
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          best=""; bestv=""
+          for app in /Applications/Xcode_*.app; do
+            [ -L "$app" ] && continue  # skip aliases, e.g. Xcode_27.1.app -> Xcode_27.1_beta.app
+            name=$(basename "$app" | tr '[:upper:]' '[:lower:]')
+            case "$name" in *beta*|*_rc*|*release_candidate*) continue ;; esac
+            v=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null) || continue
+            [ "${v%%.*}" -ge 26 ] || continue
+            if [ -z "$bestv" ] || [ "$(printf '%s\n%s\n' "$bestv" "$v" | sort -V | tail -1)" = "$v" ]; then
+              best="$app"; bestv="$v"
+            fi
+          done
+          if [ -z "$best" ]; then
+            echo "::error::No stable Xcode 26+ installed"
+            ls -la /Applications | grep -i xcode
+            exit 1
+          fi
+          echo "DEVELOPER_DIR=$best/Contents/Developer" >> "$GITHUB_ENV"
+          echo "Selected $best ($bestv)"
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
       - run: brew install xcodegen
       - run: navapp/scripts/build-ipa.sh
       - uses: actions/upload-artifact@v4

@@ -24,7 +24,6 @@
 "Open Settings" = "Open Settings";
 "Install Watchapp" = "Install Watchapp";
 "Pebble" = "Pebble";
-"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone." = "Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone.";
 "Something Went Wrong" = "Something Went Wrong";
 "OK" = "OK";
 "Location is off for Nav Test. Turn it on in Settings to get directions." = "Location is off for Nav Test. Turn it on in Settings to get directions.";
@@ -38,3 +37,8 @@
 "There are no roads near this place." = "There are no roads near this place.";
 "No route found to this place." = "No route found to this place.";
 "This trip is too long to route." = "This trip is too long to route.";
+"Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset." = "Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.";
+"Watch Display" = "Watch Display";
+"Automatic" = "Automatic";
+"Light" = "Light";
+"Dark" = "Dark";

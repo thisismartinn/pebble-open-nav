@@ -8,6 +8,8 @@ var REQUEST_TIMEOUT_MS = 2500;
 // app is English-only, so on a Vietnamese phone it reports "en_VN". Until the
 // nav app answers, use the watch's own language (set by its language pack).
 var navLang = null;
+// Watch theme from the nav app: 1 light, 0 dark (null until it answers).
+var navTheme = null;
 
 function fallbackLang() {
   var code = '';
@@ -46,6 +48,7 @@ function T(key, values) {
 // the watch's own texts match. Before that the watch keeps its own language.
 function send(dict) {
   if (navLang) dict.Lang = navLang;
+  if (navTheme !== null) dict.Theme = navTheme;
   Pebble.sendAppMessage(dict);
 }
 
@@ -119,6 +122,7 @@ function sendProbe() {
 
 function handleStep(s) {
   if (s.lang === 'vi' || s.lang === 'en') navLang = s.lang;
+  if (s.theme === 'light' || s.theme === 'dark') navTheme = s.theme === 'light' ? 1 : 0;
   if (s.ended) {
     hadStep = false;
     send({ Ended: 1, Instruction: s.reason || '' });

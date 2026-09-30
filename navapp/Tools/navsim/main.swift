@@ -3,6 +3,7 @@
 //
 //   navsim [from-lat,lon] [to-lat,lon] [--speed m/s] [--costing motorbike|car|bicycle|walk] [--en]
 //          [--route-json file]   use a saved Valhalla /route response instead of fetching one
+//          [--theme light|dark|auto]  watch theme (auto: light between sunrise and sunset)
 import Foundation
 
 setvbuf(stdout, nil, _IONBF, 0)
@@ -18,6 +19,7 @@ let costing = OpenMapServices.Costing(rawValue: [
     "motorbike": "motor_scooter", "car": "auto", "bicycle": "bicycle", "walk": "pedestrian",
 ][option("--costing") ?? "motorbike"] ?? "motor_scooter") ?? .motorbike
 let routeFile = option("--route-json")
+let themeOption = option("--theme") ?? "auto"  // light | dark | auto (sunrise/sunset at the start)
 let vietnamese = !args.contains("--en")
 args.removeAll { $0 == "--en" }
 
@@ -45,7 +47,10 @@ let server = StepServer()
 server.onStateChange = { state in
     if case .failed(let message) = state { print("Server on 127.0.0.1:\(StepServer.port) failed: \(message)") }
 }
-server.publish(WatchStep.idle(vietnamese: vietnamese))
+let light = themeOption == "auto" ? Sun.isUp(at: Date(), at: from) : themeOption == "light"
+let ctx = WatchContext(vietnamese: vietnamese, light: light)
+print("Watch theme: \(light ? "light" : "dark")")
+server.publish(WatchStep.idle(ctx))
 server.start()
 
 Task {
@@ -65,12 +70,11 @@ Task {
             let fix = position(on: route, at: min(travelled, route.totalLength))
             guard let u = guidance.update(fix) else { break }
             if u.arrived {
-                server.publish(WatchStep.ended(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived",
-                                               vietnamese: vietnamese))
+                server.publish(WatchStep.ended(reason: vietnamese ? "Bạn đã tới nơi" : "You have arrived", ctx))
                 print("Arrived. Serving \"ended\" for 20 s.")
                 break
             }
-            let step = WatchStep.step(u, vietnamese: vietnamese)
+            let step = WatchStep.step(u, ctx)
             server.publish(step)
             let stats = server.pollStats
             print(String(format: "%5.0f m  next in %4.0f m  off-route %4.1f m  polls %d  | %@",

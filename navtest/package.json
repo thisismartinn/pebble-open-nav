@@ -33,7 +33,8 @@
       "Eta",
       "Status",
       "Ended",
-      "Lang"
+      "Lang",
+      "Theme"
     ],
     "resources": {
       "media": []

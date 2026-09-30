@@ -34,6 +34,28 @@ static bool s_ended = false;
 static bool s_vi = false;
 #define TR(en, vi) (s_vi ? (vi) : (en))
 
+// Light theme: dark text on white is far easier to read in sunlight. The phone
+// decides (automatic: sunrise to sunset); the last choice is kept so the next
+// launch starts in the same theme.
+#define PERSIST_KEY_LIGHT 1
+static bool s_light = false;
+
+typedef struct {
+  GColor bg, fg, top, instr, eta;
+} Theme;
+
+static Theme prv_theme(void) {
+#ifdef PBL_COLOR
+  if (s_light) {
+    return (Theme){ GColorWhite, GColorBlack, GColorWindsorTan, GColorBlack, GColorCobaltBlue };
+  }
+  return (Theme){ GColorBlack, GColorWhite, GColorChromeYellow, GColorChromeYellow, GColorPictonBlue };
+#else
+  if (s_light) return (Theme){ GColorWhite, GColorBlack, GColorBlack, GColorBlack, GColorBlack };
+  return (Theme){ GColorBlack, GColorWhite, GColorWhite, GColorWhite, GColorWhite };
+#endif
+}
+
 static void prv_line(GContext *ctx, int x0, int y0, int x1, int y1) {
   graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 }
@@ -58,8 +80,9 @@ static void prv_arrow_update(Layer *layer, GContext *ctx) {
   GRect b = layer_get_bounds(layer);
   const int sz = s_arrow_size;
   int ox = (b.size.w - sz) / 2, oy = (b.size.h - sz) / 2;
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  const GColor fg = prv_theme().fg;
+  graphics_context_set_stroke_color(ctx, fg);
+  graphics_context_set_fill_color(ctx, fg);
   graphics_context_set_stroke_width(ctx, sz >= 60 ? 7 : 5);
 #define P(v) ((v) * sz / 60)
 #define L(a, b, c, d) prv_line(ctx, ox + P(a), oy + P(b), ox + P(c), oy + P(d))
@@ -91,6 +114,16 @@ static void prv_refresh(void) {
   text_layer_set_text(s_dist_layer, s_dist);
   text_layer_set_text(s_instr_layer, s_instr);
   text_layer_set_text(s_eta_layer, s_eta);
+  layer_mark_dirty(s_arrow_layer);
+}
+
+static void prv_apply_theme(void) {
+  const Theme t = prv_theme();
+  window_set_background_color(s_window, t.bg);
+  text_layer_set_text_color(s_top_layer, t.top);
+  text_layer_set_text_color(s_dist_layer, t.fg);
+  text_layer_set_text_color(s_instr_layer, s_ended ? t.fg : t.instr);
+  text_layer_set_text_color(s_eta_layer, t.eta);
   layer_mark_dirty(s_arrow_layer);
 }
 
@@ -135,7 +168,7 @@ static void prv_show_ended(const char *reason) {
   strncpy(s_instr, TR("Navigation Ended", "Đã kết thúc chỉ đường"), sizeof(s_instr) - 1);
   strncpy(s_eta, reason, sizeof(s_eta) - 1);
   text_layer_set_font(s_instr_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  text_layer_set_text_color(s_instr_layer, GColorWhite);
+  text_layer_set_text_color(s_instr_layer, prv_theme().fg);
   prv_refresh();
   vibes_long_pulse();
   app_timer_register(QUIT_AFTER_END_MS, prv_quit, NULL);
@@ -146,6 +179,14 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   if (s_ended) return;
   s_last_reply = time(NULL);
   if ((t = dict_find(iter, MESSAGE_KEY_Lang))) s_vi = strcmp(t->value->cstring, "vi") == 0;
+  if ((t = dict_find(iter, MESSAGE_KEY_Theme))) {
+    const bool light = t->value->int32 != 0;
+    if (light != s_light) {
+      s_light = light;
+      persist_write_bool(PERSIST_KEY_LIGHT, light);
+      prv_apply_theme();
+    }
+  }
   if (dict_find(iter, MESSAGE_KEY_Ended)) {
     if (s_had_trip) {
       t = dict_find(iter, MESSAGE_KEY_Instruction);
@@ -222,17 +263,15 @@ static void prv_window_load(Window *window) {
   const int y_instr = small ? 98 : h * 62 / 100;
   const int y_eta = small ? 144 : h * 84 / 100;
 
-  s_top_layer = prv_text(root, GRect(inset, y_top, cw, 24), FONT_KEY_GOTHIC_18_BOLD,
-                         PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite));
+  const Theme theme = prv_theme();
+  s_top_layer = prv_text(root, GRect(inset, y_top, cw, 24), FONT_KEY_GOTHIC_18_BOLD, theme.top);
   s_arrow_layer = layer_create(GRect(0, y_arrow, w, s_arrow_size + 2));
   layer_set_update_proc(s_arrow_layer, prv_arrow_update);
   layer_add_child(root, s_arrow_layer);
   s_dist_layer = prv_text(root, GRect(inset, y_dist, cw, 36),
-                          small ? FONT_KEY_GOTHIC_28_BOLD : FONT_KEY_BITHAM_30_BLACK, GColorWhite);
-  s_instr_layer = prv_text(root, GRect(inset, y_instr, cw, 46), FONT_KEY_GOTHIC_18_BOLD,
-                           PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite));
-  s_eta_layer = prv_text(root, GRect(inset, y_eta, cw, 22), FONT_KEY_GOTHIC_18,
-                         PBL_IF_COLOR_ELSE(GColorPictonBlue, GColorWhite));
+                          small ? FONT_KEY_GOTHIC_28_BOLD : FONT_KEY_BITHAM_30_BLACK, theme.fg);
+  s_instr_layer = prv_text(root, GRect(inset, y_instr, cw, 46), FONT_KEY_GOTHIC_18_BOLD, theme.instr);
+  s_eta_layer = prv_text(root, GRect(inset, y_eta, cw, 22), FONT_KEY_GOTHIC_18, theme.eta);
   prv_refresh();
 }
 
@@ -246,10 +285,17 @@ static void prv_window_unload(Window *window) {
 
 static void prv_init(void) {
   s_vi = strncmp(i18n_get_system_locale(), "vi", 2) == 0;
+  if (persist_exists(PERSIST_KEY_LIGHT)) {
+    s_light = persist_read_bool(PERSIST_KEY_LIGHT);
+  } else {
+    const time_t now = time(NULL);
+    const int hour = localtime(&now)->tm_hour;
+    s_light = hour >= 6 && hour < 18;  // first launch: daytime guess until the phone answers
+  }
   strncpy(s_top, TR("Waiting for phone…", "Đang chờ điện thoại…"), sizeof(s_top) - 1);
 
   s_window = window_create();
-  window_set_background_color(s_window, GColorBlack);
+  window_set_background_color(s_window, prv_theme().bg);
   window_set_window_handlers(s_window, (WindowHandlers) {
     .load = prv_window_load,
     .unload = prv_window_unload,

@@ -136,21 +136,34 @@ public final class Guidance {
     }
 }
 
+/// Settings every watch payload carries.
+public struct WatchContext: Sendable {
+    /// Phone language. The nav app is the watch's only reliable source for it:
+    /// the Pebble iOS app is English-only and reports e.g. "en_VN" on a Vietnamese phone.
+    public var vietnamese: Bool
+    /// Light theme on colour watches (easier to read in sunlight).
+    public var light: Bool
+
+    public init(vietnamese: Bool, light: Bool) {
+        self.vietnamese = vietnamese
+        self.light = light
+    }
+
+    var fields: [String: Any] {
+        ["lang": vietnamese ? "vi" : "en", "theme": light ? "light" : "dark"]
+    }
+}
+
 /// Builds the JSON the watchapp's phone-side JavaScript fetches from 127.0.0.1.
-/// Every payload carries "lang" ("vi" or "en"): the nav app is the watch's only
-/// reliable source for the phone's language, because the Pebble iOS app is
-/// English-only and reports e.g. "en_VN" on a Vietnamese phone.
 public enum WatchStep {
-    public static func idle(vietnamese: Bool) -> [String: Any] {
-        ["active": false, "lang": lang(vietnamese)]
+    public static func idle(_ ctx: WatchContext) -> [String: Any] {
+        ctx.fields.merging(["active": false]) { $1 }
     }
 
     /// A trip has started but there's no route or GPS fix yet.
-    public static func routing(vietnamese: Bool) -> [String: Any] {
-        ["active": false, "routing": true, "lang": lang(vietnamese)]
+    public static func routing(_ ctx: WatchContext) -> [String: Any] {
+        ctx.fields.merging(["active": false, "routing": true]) { $1 }
     }
-
-    private static func lang(_ vietnamese: Bool) -> String { vietnamese ? "vi" : "en" }
 
     /// Fixed 24-hour Latin digits whatever the phone's region and 12/24-hour setting,
     /// since the watch fonts only cover Latin text.
@@ -161,24 +174,24 @@ public enum WatchStep {
         return f
     }()
 
-    public static func ended(reason: String, vietnamese: Bool) -> [String: Any] {
-        ["active": false, "ended": true, "reason": reason, "lang": lang(vietnamese)]
+    public static func ended(reason: String, _ ctx: WatchContext) -> [String: Any] {
+        ctx.fields.merging(["active": false, "ended": true, "reason": reason]) { $1 }
     }
 
-    public static func step(_ u: GuidanceUpdate, vietnamese: Bool, now: Date = Date()) -> [String: Any] {
+    public static func step(_ u: GuidanceUpdate, _ ctx: WatchContext, now: Date = Date()) -> [String: Any] {
+        let vietnamese = ctx.vietnamese
         var km = String(format: "%.1f", u.remainingDistance / 1000)
         if vietnamese { km = km.replacingOccurrences(of: ".", with: ",") }  // "8,4 km"
         let minutes = max(1, Int((u.remainingTime / 60).rounded()))
         let arrive = etaFormatter.string(from: now.addingTimeInterval(u.remainingTime))
-        return [
+        return ctx.fields.merging([
             "active": true,
-            "lang": lang(vietnamese),
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,
             "distance": Int(u.distanceToManeuver.rounded()),
             "instruction": watchText(u.maneuver.instruction),
             "remaining": vietnamese ? "Còn \(km) km" : "\(km) km left",
             "eta": vietnamese ? "\(minutes) phút · Đến \(arrive)" : "\(minutes) min · Arrive \(arrive)",
-        ]
+        ]) { $1 }
     }
 
     /// The watch keeps 96 bytes per instruction. Trim at a character boundary

@@ -124,6 +124,7 @@ private struct TripSheet: View {
             precisionSection
             watchSection
         }
+        .sheetGlassListBackground(detent)
         .searchable(text: $nav.query, isPresented: $searchActive,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search for a place or address")
@@ -156,6 +157,7 @@ private struct TripSheet: View {
             precisionSection
             watchSection
         }
+        .sheetGlassListBackground(detent)
     }
 
     private var guidanceList: some View {
@@ -196,6 +198,7 @@ private struct TripSheet: View {
             precisionSection
             watchSection
         }
+        .sheetGlassListBackground(detent)
     }
 
     private func ended(_ reason: String) -> some View {
@@ -228,6 +231,11 @@ private struct TripSheet: View {
     private var watchSection: some View {
         Section {
             Label(nav.watchStatus, systemImage: "applewatch")
+            Picker(selection: $nav.watchTheme) {
+                ForEach(WatchTheme.allCases) { Text($0.label).tag($0) }
+            } label: {
+                Label("Watch Display", systemImage: "circle.lefthalf.filled")
+            }
             if let problem = nav.serverProblem {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
@@ -240,7 +248,7 @@ private struct TripSheet: View {
         } header: {
             Text("Pebble")
         } footer: {
-            Text("Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone.")
+            Text("Open Nav Test on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.")
         }
     }
 }
@@ -262,6 +270,28 @@ private struct PlaceRow: View {
             Image(systemName: "mappin.circle.fill")
                 .foregroundStyle(.red)
         }
+    }
+}
+
+/// On iOS 26 a partial-height sheet has a Liquid Glass background, which a List's
+/// opaque background would cover. Hide it there; at full height the system makes
+/// the sheet opaque, so keep the standard background. No change on iOS 17/18,
+/// where sheets are opaque anyway.
+private struct SheetGlassListBackground: ViewModifier {
+    let detent: PresentationDetent
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollContentBackground(detent == .large ? .automatic : .hidden)
+        } else {
+            content
+        }
+    }
+}
+
+private extension View {
+    func sheetGlassListBackground(_ detent: PresentationDetent) -> some View {
+        modifier(SheetGlassListBackground(detent: detent))
     }
 }
 
@@ -292,6 +322,16 @@ extension WatchManeuver {
         case .slightRight: "arrow.up.right"
         case .uturn: "arrow.uturn.down"
         case .arrive: "mappin.circle.fill"
+        }
+    }
+}
+
+extension WatchTheme {
+    var label: String {
+        switch self {
+        case .automatic: String(localized: "Automatic")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
         }
     }
 }
