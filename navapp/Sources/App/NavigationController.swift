@@ -26,7 +26,12 @@ enum WatchTheme: String, CaseIterable, Identifiable {
 final class NavigationController: NSObject, ObservableObject {
     enum Phase: Equatable {
         case idle, routing, navigating
-        case ended(String)
+    }
+
+    /// Shown for a few seconds when a trip ends; the sheet is back on search by then.
+    struct EndNotice: Equatable, Identifiable {
+        let id = UUID()
+        let text: String
     }
 
     /// What the watch is currently being told, so it can be re-sent when a
@@ -38,6 +43,7 @@ final class NavigationController: NSObject, ObservableObject {
     }
 
     @Published var phase: Phase = .idle
+    @Published var endNotice: EndNotice?
     @Published var errorMessage: String?
     @Published var costing: OpenMapServices.Costing = .motorbike
     /// The app follows the phone's language (Vietnamese or English); directions
@@ -173,16 +179,6 @@ final class NavigationController: NSObject, ObservableObject {
         finish(arrived: false)
     }
 
-    /// Back to search. The watch keeps getting "ended" until the next trip
-    /// starts, so it still closes even if it polls late.
-    func reset() {
-        phase = .idle
-        route = nil
-        update = nil
-        destination = nil
-        destinationName = nil
-    }
-
     private func routeFrom(_ fix: CLLocation) {
         awaitingFix = false
         let trip = tripID
@@ -260,12 +256,18 @@ final class NavigationController: NSObject, ObservableObject {
         }
     }
 
+    /// Straight back to search, with a short notice. The watch keeps getting "ended"
+    /// until the next trip starts, so it still shows its end screen even if it polls late.
     private func finish(arrived: Bool) {
-        let reason = arrived ? String(localized: "You have arrived") : String(localized: "Stopped on phone")
         publish(.ended(arrived: arrived))
         tripLog?.event("end", arrived ? "arrived" : "stopped on phone")
         LiveActivityController.shared.end(arrived: arrived)
-        phase = .ended(reason)
+        endNotice = EndNotice(text: arrived ? String(localized: "You have arrived") : String(localized: "Navigation ended"))
+        phase = .idle
+        route = nil
+        update = nil
+        destination = nil
+        destinationName = nil
         guidance = nil
         tripID = nil
         awaitingFix = false

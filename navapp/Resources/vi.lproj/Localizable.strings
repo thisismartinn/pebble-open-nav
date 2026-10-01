@@ -10,6 +10,7 @@
 "Bicycle" = "Xe đạp";
 "Walk" = "Đi bộ";
 "Search for a place or address" = "Tìm địa điểm hoặc địa chỉ";
+"Clear" = "Xóa";
 "Getting your location…" = "Đang xác định vị trí…";
 "Finding a route…" = "Đang tìm đường…";
 "Cancel" = "Hủy";
@@ -17,8 +18,7 @@
 "End Route" = "Kết thúc lộ trình";
 "Remaining" = "Còn lại";
 "Arrival" = "Giờ đến";
-"Navigation Ended" = "Đã kết thúc chỉ đường";
-"New Trip" = "Chuyến đi mới";
+"Navigation ended" = "Đã kết thúc chỉ đường";
 "Precise Location is off, so directions can't follow you turn by turn." = "Vị trí chính xác đang tắt nên không thể chỉ đường theo từng ngã rẽ.";
 "Open Settings" = "Mở Cài đặt";
 "Install Watchapp" = "Cài ứng dụng đồng hồ";
@@ -26,7 +26,6 @@
 "Something Went Wrong" = "Đã xảy ra lỗi";
 "OK" = "OK";
 "Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "PebbleOpenNav chưa được phép dùng vị trí. Hãy bật trong Cài đặt để nhận chỉ đường.";
-"Stopped on phone" = "Đã dừng trên điện thoại";
 "You have arrived" = "Bạn đã tới nơi";
 "The watch link stopped (%@). Retrying…" = "Mất kết nối với đồng hồ (%@). Đang thử lại…";
 "Couldn't get a route" = "Không tìm được đường đi";

@@ -10,6 +10,7 @@
 "Bicycle" = "Bicycle";
 "Walk" = "Walk";
 "Search for a place or address" = "Search for a place or address";
+"Clear" = "Clear";
 "Getting your location…" = "Getting your location…";
 "Finding a route…" = "Finding a route…";
 "Cancel" = "Cancel";
@@ -17,8 +18,7 @@
 "End Route" = "End Route";
 "Remaining" = "Remaining";
 "Arrival" = "Arrival";
-"Navigation Ended" = "Navigation Ended";
-"New Trip" = "New Trip";
+"Navigation ended" = "Navigation ended";
 "Precise Location is off, so directions can't follow you turn by turn." = "Precise Location is off, so directions can't follow you turn by turn.";
 "Open Settings" = "Open Settings";
 "Install Watchapp" = "Install Watchapp";
@@ -26,7 +26,6 @@
 "Something Went Wrong" = "Something Went Wrong";
 "OK" = "OK";
 "Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "Location is off for PebbleOpenNav. Turn it on in Settings to get directions.";
-"Stopped on phone" = "Stopped on phone";
 "You have arrived" = "You have arrived";
 "The watch link stopped (%@). Retrying…" = "The watch link stopped (%@). Retrying…";
 "Couldn't get a route" = "Couldn't get a route";

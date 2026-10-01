@@ -42,6 +42,22 @@ struct ContentView: View {
             if feature != nil, detent == .large { detent = .medium }
         }
         .onReceive(nav.$location) { search.near = $0 }
+        .overlay(alignment: .top) {
+            if let notice = nav.endNotice {
+                NoticeCapsule(text: notice.text)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.smooth, value: nav.endNotice)
+        // Counted from when it can be seen: a ride usually ends with the phone locked.
+        .task(id: "\(nav.endNotice?.id.uuidString ?? "")\(scenePhase == .active)") {
+            guard let notice = nav.endNotice, scenePhase == .active else { return }
+            // After the sheet has switched back to search, which moves VoiceOver's focus.
+            try? await Task.sleep(for: .milliseconds(600))
+            AccessibilityNotification.Announcement(notice.text).post()
+            try? await Task.sleep(for: .seconds(2.4))
+            if nav.endNotice == notice { nav.endNotice = nil }
+        }
         .sheet(isPresented: .constant(true)) {
             TripSheet(nav: nav, search: search, detent: $detent)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
@@ -58,10 +74,11 @@ struct ContentView: View {
             case .navigating:
                 camera = .userLocation(followsHeading: true, fallback: .automatic)
                 detent = ContentView.collapsed
-            case .routing, .ended:
+            case .routing:
                 detent = ContentView.collapsed
             case .idle:
                 camera = .userLocation(fallback: .automatic)
+                detent = ContentView.collapsed  // the end-of-trip notice shows above the sheet
             }
         }
     }
@@ -71,7 +88,9 @@ private struct TripSheet: View {
     @ObservedObject var nav: NavigationController
     @ObservedObject var search: SearchModel
     @Binding var detent: PresentationDetent
-    @State private var searchActive = false
+    @FocusState private var searchFocused: Bool
+    /// From focusing the field until Cancel; the keyboard also goes on Search or a scroll.
+    @State private var searching = false
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -82,12 +101,12 @@ private struct TripSheet: View {
                     if let card = search.card { placeCard(card) } else { searchList }
                 case .routing: routingList
                 case .navigating: guidanceList
-                case .ended(let reason): ended(reason)
                 }
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .onChange(of: nav.phase) { _, _ in searching = false }  // a place was picked, or a trip ended
         // Alerts must come from the sheet: the view under a presented sheet can't show one.
         .alert("Something Went Wrong", isPresented: Binding(
             get: { nav.errorMessage != nil || search.errorMessage != nil },
@@ -99,12 +118,11 @@ private struct TripSheet: View {
         }
     }
 
-    /// Idle has no title, like Maps: the search field heads the sheet. The bar
-    /// stays inline, so there's no empty large-title space above it.
+    /// Idle has no title, like Maps: the search field heads the sheet.
     private var title: String {
         switch nav.phase {
         case .routing, .navigating: nav.destinationName ?? String(localized: "Route")
-        case .idle, .ended: ""
+        case .idle: ""
         }
     }
 
@@ -149,15 +167,23 @@ private struct TripSheet: View {
             watchSection
         }
         .sheetGlassListBackground(detent)
-        .searchable(text: $search.query, isPresented: $searchActive,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: "Search for a place or address")
-        .onSubmit(of: .search) { search.search() }
-        .onChange(of: searchActive) { _, active in
+        // No navigation bar while searching: it would only leave an empty gap above the
+        // field, which heads the sheet as in Maps.
+        .toolbar(.hidden, for: .navigationBar)
+        .topBar {
+            SheetSearchField(text: $search.query, focused: $searchFocused, showsCancel: searching,
+                             onSubmit: { search.search() },
+                             onCancel: {
+                                 search.reset()
+                                 searchFocused = false
+                                 searching = false
+                                 if detent == .large { detent = .medium }  // show the map again
+                             })
+        }
+        .onChange(of: searchFocused) { _, active in
             if active {
+                searching = true
                 detent = .large
-            } else if detent == .large {
-                detent = .medium  // search cancelled: show the map again
             }
         }
     }
@@ -257,17 +283,6 @@ private struct TripSheet: View {
             watchSection
         }
         .sheetGlassListBackground(detent)
-    }
-
-    private func ended(_ reason: String) -> some View {
-        ContentUnavailableView {
-            Label("Navigation Ended", systemImage: "checkmark.circle.fill")
-        } description: {
-            Text(reason)
-        } actions: {
-            Button("New Trip") { nav.reset() }
-                .buttonStyle(.borderedProminent)
-        }
     }
 
     // MARK: Shared sections
@@ -390,6 +405,86 @@ private struct SuggestionRow: View {
     }
 }
 
+/// The sheet's search field. Stock parts in the system search field's look: a capsule of
+/// Liquid Glass on iOS 26, the filled rounded field before. Cancel shows while searching.
+private struct SheetSearchField: View {
+    @Binding var text: String
+    var focused: FocusState<Bool>.Binding
+    let showsCancel: Bool
+    let onSubmit: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                    .contentShape(Rectangle())
+                    .onTapGesture { focused.wrappedValue = true }
+                // The full height of the capsule is the text field, so a tap anywhere on it types.
+                TextField("Search for a place or address", text: $text)
+                    .frame(minHeight: 44)
+                    .focused(focused)
+                    .submitLabel(.search)
+                    .onSubmit(onSubmit)
+                    .accessibilityAddTraits(.isSearchField)
+                if !text.isEmpty {
+                    Button("Clear", systemImage: "xmark.circle.fill") { text = "" }
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .modifier(SearchFieldBackground())
+            if showsCancel {
+                Button("Cancel", action: onCancel)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)  // clear of the sheet's grabber, which the hidden bar used to leave room for
+        .padding(.bottom, 8)
+        .animation(.smooth, value: showsCancel)
+    }
+}
+
+private struct SearchFieldBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content.background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10))
+        }
+    }
+}
+
+/// A short notice at the top of the map, e.g. when a trip ends. It goes away by itself.
+private struct NoticeCapsule: View {
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: "checkmark.circle.fill")
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .modifier(CapsuleBackground())
+            .padding(.top, 8)
+    }
+}
+
+private struct CapsuleBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: .capsule)
+        } else {
+            content.background(.regularMaterial, in: Capsule())
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+        }
+    }
+}
+
 /// Travel mode as SF Symbols, like Apple Maps; VoiceOver reads the mode's name.
 /// Meant as a List row of its own: like Maps' transport selector, it spans the
 /// row's full width, with no card or padding around it.
@@ -450,6 +545,18 @@ private struct SheetGlassListBackground: ViewModifier {
 private extension View {
     func sheetGlassListBackground(_ detent: PresentationDetent) -> some View {
         modifier(SheetGlassListBackground(detent: detent))
+    }
+
+    /// Pins `content` above a list. On iOS 26 it's a bar the list scrolls under with the
+    /// system's soft edge; before, an inset on the grouped background.
+    @ViewBuilder func topBar(@ViewBuilder _ content: () -> some View) -> some View {
+        if #available(iOS 26.0, *) {
+            safeAreaBar(edge: .top, spacing: 0, content: content)
+        } else {
+            safeAreaInset(edge: .top, spacing: 0) {
+                content().background(Color(.systemGroupedBackground))
+            }
+        }
     }
 }
 
@@ -514,7 +621,8 @@ extension WatchTheme {
 extension OpenMapServices.Costing {
     var symbolName: String {
         switch self {
-        case .motorbike: "scooter"
+        // "motorcycle.fill" is new in iOS 18 (SF Symbols 6); iOS 17 keeps the scooter.
+        case .motorbike: if #available(iOS 18, *) { "motorcycle.fill" } else { "scooter" }
         case .car: "car.fill"
         case .bicycle: "bicycle"
         case .walk: "figure.walk"
