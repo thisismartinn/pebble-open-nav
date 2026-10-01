@@ -1,6 +1,5 @@
 /* PebbleOpenNav UI strings. Keys are the English text used in the Swift code. */
 
-"PebbleOpenNav" = "PebbleOpenNav";
 "Route" = "Route";
 "Destination" = "Destination";
 "Results" = "Results";

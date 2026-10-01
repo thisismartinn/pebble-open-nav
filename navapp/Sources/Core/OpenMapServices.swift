@@ -41,7 +41,7 @@ public enum OpenMapServices {
             let code = (try? JSONDecoder().decode(ValhallaError.self, from: data))?.errorCode
             throw ServiceError(message: routeErrorMessage(code))
         }
-        return try parseRoute(data)
+        return try parseRoute(data, language: language)
     }
 
     /// Valhalla's error texts are English-only, so show our own translated message.
@@ -54,13 +54,28 @@ public enum OpenMapServices {
         }
     }
 
-    /// Parses a Valhalla /route response.
-    public static func parseRoute(_ data: Data) throws -> Route {
+    /// Parses a Valhalla /route response, with our own short instruction texts
+    /// (`InstructionText`) in place of Valhalla's.
+    /// - Parameter language: the language the route was requested in, e.g. "vi-VN".
+    ///   By default the one the response says it's in.
+    public static func parseRoute(_ data: Data, language: String? = nil) throws -> Route {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let trip = try decoder.decode(ValhallaResponse.self, from: data).trip
         guard let leg = trip.legs.first else { throw ServiceError(message: String(localized: "Couldn't get a route")) }
-        return Route(shape: Polyline.decode(leg.shape), maneuvers: leg.maneuvers,
+        let vietnamese = (language ?? trip.language ?? "").hasPrefix("vi")
+        var maneuvers: [ValhallaManeuver] = []
+        for (i, m) in leg.maneuvers.enumerated() {
+            let next = i + 1 < leg.maneuvers.count ? leg.maneuvers[i + 1] : nil
+            // The roundabout's text already names the exit, so its exit maneuver goes.
+            // Guidance counts the roundabout as passed at its end, the exit, so its step
+            // stays up until then.
+            if m.type == 27, maneuvers.last?.type == 26 { continue }
+            var m = m
+            m.instruction = InstructionText.text(for: m, next: next, vietnamese: vietnamese)
+            maneuvers.append(m)
+        }
+        return Route(shape: Polyline.decode(leg.shape), maneuvers: maneuvers,
                      totalTime: trip.summary.time)
     }
 
@@ -101,8 +116,19 @@ public enum OpenMapServices {
 
 public struct ValhallaManeuver: Decodable, Sendable {
     public let type: Int
-    public let instruction: String
+    /// Our short text once `OpenMapServices.parseRoute` has run, Valhalla's before.
+    public internal(set) var instruction: String
+    /// Valhalla's spoken alert, e.g. "Turn right onto Đường Cầu Bươu.".
+    public let verbalTransitionAlertInstruction: String?
+    /// Names along the maneuver, and the ones where it starts when those differ.
+    public let streetNames: [String]?
+    public let beginStreetNames: [String]?
+    /// For entering a roundabout: which exit to take.
+    public let roundaboutExitCount: Int?
     public let beginShapeIndex: Int
+    /// Where the maneuver ends: where the next one starts, except for a roundabout
+    /// whose exit maneuver `parseRoute` dropped, where it is the exit.
+    public let endShapeIndex: Int
     public let length: Double  // km
     public let time: Double  // s
 }
@@ -116,6 +142,7 @@ struct ValhallaResponse: Decodable {
         }
         let legs: [Leg]
         let summary: Summary
+        let language: String?
     }
     let trip: Trip
 }

@@ -99,11 +99,12 @@ private struct TripSheet: View {
         }
     }
 
+    /// Idle has no title, like Maps: the search field heads the sheet. The bar
+    /// stays inline, so there's no empty large-title space above it.
     private var title: String {
         switch nav.phase {
-        case .idle: search.card == nil ? String(localized: "PebbleOpenNav") : ""
         case .routing, .navigating: nav.destinationName ?? String(localized: "Route")
-        case .ended: ""
+        case .idle, .ended: ""
         }
     }
 
@@ -390,6 +391,8 @@ private struct SuggestionRow: View {
 }
 
 /// Travel mode as SF Symbols, like Apple Maps; VoiceOver reads the mode's name.
+/// Meant as a List row of its own: like Maps' transport selector, it spans the
+/// row's full width, with no card or padding around it.
 struct TransportPicker: View {
     @Binding var costing: OpenMapServices.Costing
 
@@ -402,6 +405,9 @@ struct TransportPicker: View {
             }
         }
         .pickerStyle(.segmented)
+        .controlSize(.large)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
     }
 }
 

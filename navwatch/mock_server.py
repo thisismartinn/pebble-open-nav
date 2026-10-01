@@ -1,4 +1,4 @@
-"""Stand-in for the iPhone navigation app's local server (protocol v2, PROTOCOL.md).
+"""Stand-in for the iPhone navigation app's local server (protocol v3, PROTOCOL.md).
 
 Simulates riding a short route and serves the current step on
 http://127.0.0.1:8765/step, the same JSON the iOS app serves.
@@ -7,8 +7,12 @@ http://127.0.0.1:8765/step, the same JSON the iOS app serves.
   GET /start    restart the trip (routing for ROUTING_S seconds first)
   GET /stop     end the trip as if the user tapped "End" on the phone (arrived: false)
   GET /idle     no trip (the watch's start screen)
-  GET /pause    /step answers 503 until /resume, so the watch sees State 3
-  GET /resume   answer /step again
+  GET /pause    /step answers only after PAUSE_HOLD_S, too late for the JS (a timeout: it
+                sends the watch nothing), until /resume: Connecting… after 20 s,
+                Disconnected after 40 s
+  GET /error    /step answers 503 until /resume, so the JS sends State 3: Disconnected
+                after two
+  GET /resume   answer /step normally again
 
 Any request also takes these query switches:
   theme=light|dark   watch theme (themeAuto becomes false)
@@ -17,17 +21,22 @@ Any request also takes these query switches:
   routing=<s>        with /start: route for this long first (default ROUTING_S)
   speed=<m/s>        riding speed (0: stand still, e.g. for screenshots)
 
+Every payload carries "poll", the phone's suggested ms until the watch's next Tick.
+
 SPEED (m/s, default 10) speeds up the simulation, e.g. SPEED=60 to reach the end quickly.
+PORT (default 8765) serves elsewhere, e.g. to test this server next to a running one.
 """
 import json
 import os
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 SPEED = float(os.environ.get("SPEED", "10"))
+PORT = int(os.environ.get("PORT", "8765"))
 ROUTING_S = 3
 FIX_AGE_S = 0.6  # how old the GPS fix is when /step is asked
+PAUSE_HOLD_S = 3  # longer than the JS's 2.5 s request timeout
 
 # (maneuver, English, Vietnamese, metres until this maneuver from the previous one)
 # maneuver: 1 straight, 2 left, 3 right, 4 slight left, 5 slight right, 6 u-turn, 7 arrive
@@ -45,7 +54,8 @@ ROUTE = [
 TOTAL = sum(d for *_, d in ROUTE)
 state = {
     "start": time.time(), "offset": 0.0, "speed": SPEED, "mode": "trip",  # trip | idle | stopped
-    "paused": False, "lang": "vi", "theme": "dark", "themeAuto": True,
+    "fault": None,  # None | "pause" | "error"
+    "lang": "vi", "theme": "dark", "themeAuto": True,
     "generation": 1,  # goes up with each /start, like the nav app's route generation
 }
 
@@ -56,29 +66,43 @@ def cut_utf8(text, max_bytes=90):
     return data.decode(errors="ignore").rstrip(" .")
 
 
+def step_poll(distance):
+    """The nav app's poll hint during a step (this rider never leaves the route)."""
+    if distance < 300:
+        return 1000
+    return 3000 if distance < 1000 else 10000
+
+
 def current_step():
     common = {"lang": state["lang"], "theme": state["theme"], "themeAuto": state["themeAuto"]}
     if state["mode"] == "idle":
-        return {**common, "active": False}
+        return {**common, "poll": 3000, "active": False}
     if state["mode"] == "stopped":
-        return {**common, "active": False, "ended": True, "arrived": False}
+        return {**common, "poll": 3000, "active": False, "ended": True, "arrived": False}
     now = time.time()
     if now < state["start"]:
-        return {**common, "active": False, "routing": True}
+        return {**common, "poll": 1000, "active": False, "routing": True}
     fix_time = now - FIX_AGE_S
     travelled = state["offset"] + max(0.0, fix_time - state["start"]) * state["speed"]
     if travelled >= TOTAL:
-        return {**common, "active": False, "ended": True, "arrived": True}
+        return {**common, "poll": 3000, "active": False, "ended": True, "arrived": True}
+    # Like the nav app: the step after a corner shows from 30 m (+1 s of travel, at most
+    # 50 m) before it. This rider never jitters, so no hysteresis or minimum time is needed.
+    lead = min(30 + state["speed"], 50)
     done = 0
     for index, (maneuver, english, vietnamese, dist) in enumerate(ROUTE):
-        if travelled < done + dist:
+        if travelled < done + dist - (lead if index < len(ROUTE) - 1 else 0):
             remaining = TOTAL - travelled
+            distance = int(done + dist - travelled)
+            # The corner not yet passed: the previous one while its next step is up early.
+            corner = done - travelled if travelled < done else distance
             return {
                 **common,
+                "poll": step_poll(min(distance, corner)),
                 "active": True,
                 "stepId": state["generation"] * 1000 + index,
                 "maneuver": maneuver,
-                "distance": int(done + dist - travelled),
+                "distance": distance,
                 "instruction": cut_utf8(vietnamese if state["lang"] == "vi" else english),
                 "remainM": int(remaining),
                 "remainS": int(remaining / (state["speed"] or SPEED)),
@@ -100,6 +124,7 @@ class Handler(BaseHTTPRequestHandler):
             state["speed"] = max(0.0, float(query["speed"]))
         path = url.path
         body = {"ok": True}
+        note = ""
         if path == "/start":
             at = float(query.get("at", 0))
             # Routing first, unless starting somewhere along the route.
@@ -111,29 +136,38 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/idle":
             state["mode"] = "idle"
         elif path == "/pause":
-            state["paused"] = True
+            state["fault"] = "pause"
+        elif path == "/error":
+            state["fault"] = "error"
         elif path == "/resume":
-            state["paused"] = False
+            state["fault"] = None
         elif path == "/step":
-            if state["paused"]:
+            if state["fault"] == "error":
                 self.send_error(503)
-                print(time.strftime("%H:%M:%S"), path, "503 (paused)", flush=True)
+                print(time.strftime("%H:%M:%S"), path, "503 (error)", flush=True)
                 return
+            if state["fault"] == "pause":
+                # A slow phone: the JS has given up by the time this answers.
+                time.sleep(PAUSE_HOLD_S)
+                note = "(held %ss) " % PAUSE_HOLD_S
             body = current_step()
         else:
             self.send_error(404)
             return
         data = json.dumps(body, ensure_ascii=False).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-        print(time.strftime("%H:%M:%S"), path, data.decode(), flush=True)
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            note = "(dropped by the JS) " + note  # it aborted a held request
+        print(time.strftime("%H:%M:%S"), path, note + data.decode(), flush=True)
 
     def log_message(self, *args):
         pass
 
 
 if __name__ == "__main__":
-    HTTPServer(("127.0.0.1", 8765), Handler).serve_forever()
+    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()

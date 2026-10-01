@@ -40,7 +40,8 @@
       "Gps",
       "Lang",
       "Theme",
-      "ThemeAuto"
+      "ThemeAuto",
+      "Poll"
     ],
     "resources": {
       "media": []

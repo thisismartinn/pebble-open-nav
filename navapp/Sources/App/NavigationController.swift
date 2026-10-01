@@ -5,7 +5,8 @@ import Foundation
 /// local server the Pebble watchapp polls. GPS runs only during a trip.
 /// Whether the Pebble watchapp is polling, for the Pebble section of the UI.
 struct WatchLinkStatus: Equatable {
-    /// The watch checked in within the last 10s.
+    /// The watch checked in within the last 15s: it may wait 10s between check-ins far from a
+    /// turn (the `poll` hint), plus the trip over Bluetooth and through the Pebble app.
     var connected = false
     /// Last check-in, if any.
     var lastCheckIn: Date?
@@ -202,6 +203,7 @@ final class NavigationController: NSObject, ObservableObject {
             let next = Guidance(route: route)
             next.speed = guidance?.speed ?? 0  // keep the watch predicting across a reroute
             next.startTime = fix.timestamp  // the rider has moved on while the route was fetched
+            if costing == .walk { next.offRouteMinSpeed = 0.5 }  // walking GPS speeds hover around 1 m/s
             guidance = next
             routeGeneration += 1
             if phase == .routing { LiveActivityController.shared.start(destinationName: destinationName ?? "") }
@@ -238,9 +240,10 @@ final class NavigationController: NSObject, ObservableObject {
         let course = fix.course >= 0 && fix.speed > 2 && fix.courseAccuracy >= 0 && fix.courseAccuracy < 45
             ? fix.course : nil
         // Doppler speed from the GPS; without it guidance estimates it from progress along the route.
+        // The raw one, however inaccurate, still tells whether we're moving, for rerouting.
         let speed = fix.speed >= 0 && fix.speedAccuracy >= 0 && fix.speedAccuracy < 3 ? fix.speed : nil
         guard let u = guidance.update(here, accuracy: fix.horizontalAccuracy, course: course,
-                                      speed: speed, time: fix.timestamp) else { return }
+                                      speed: speed, reportedSpeed: fix.speed, time: fix.timestamp) else { return }
         tripLog?.guidance(u)
         update = u
         if u.arrived {
@@ -371,7 +374,7 @@ final class NavigationController: NSObject, ObservableObject {
     private func refreshWatchStatus() {
         let stats = server.pollStats
         let status = stats.last.map {
-            WatchLinkStatus(connected: Date().timeIntervalSince($0) < 10, lastCheckIn: $0,
+            WatchLinkStatus(connected: Date().timeIntervalSince($0) < 15, lastCheckIn: $0,
                             count: stats.count, longestGap: stats.maxGap)
         } ?? WatchLinkStatus()
         if status != watchLink { watchLink = status }

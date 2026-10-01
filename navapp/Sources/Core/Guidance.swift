@@ -40,10 +40,16 @@ public enum WatchManeuver: Int, Sendable {
 }
 
 public struct GuidanceUpdate: Sendable {
+    /// The maneuver to show: the next one ahead, or from about 30 m before it the one
+    /// after it (see `Guidance.switchLead`).
     public let maneuver: ValhallaManeuver
     /// Index of `maneuver` in the route's maneuvers.
     public let maneuverIndex: Int
     public let distanceToManeuver: Double
+    /// The next maneuver actually ahead and the distance to it (for a roundabout, to its
+    /// exit): the shown one, except in the last metres before it.
+    public let cornerIndex: Int
+    public let distanceToCorner: Double
     public let remainingDistance: Double
     public let remainingTime: Double
     public let distanceFromRoute: Double
@@ -63,8 +69,23 @@ public struct GuidanceUpdate: Sendable {
 public final class Guidance {
     public let route: Route
     public var arrivalRadius = 20.0
-    public var offRouteDistance = 40.0
-    public var offRouteFixes = 3
+    /// Further from the route than this (or than the fix's accuracy, if worse), a fix is
+    /// re-acquired anywhere on the route and doesn't count as having arrived.
+    public var corridor = 40.0
+    /// A reroute takes `offRouteFixes` fixes in a row further than this from the route
+    /// (or than their accuracy, if worse) while the GPS reports at least `offRouteMinSpeed`.
+    /// Standing still doesn't count: a GPS warming up indoors drifts 10-30 m.
+    public var offRouteDistance = 25.0
+    public var offRouteFixes = 2
+    public var offRouteMinSpeed = 1.0
+
+    /// The step after the next maneuver is shown from this far before it, plus a second
+    /// of travel to cover the delay until the watch hears of it, at most `maxSwitchLead`.
+    /// The watch's new-step buzz then says "now".
+    public var switchLead = 30.0
+    public var maxSwitchLead = 50.0
+    /// How long a corner's own step stays up, at least, before the one after it replaces it.
+    public var minStepTime = 3.0
 
     /// How far ahead along the route a fix may snap between two updates, on top of
     /// the distance expected from the speed and the time since the last fix.
@@ -86,6 +107,9 @@ public final class Guidance {
     /// Recent (time, along) pairs for estimating the speed when the GPS has none.
     private var history: [(time: Date, along: Double)] = []
     private var offRouteCount = 0
+    private var shownIndex = 0
+    /// When `shownIndex` last changed.
+    private var shownSince: Date?
 
     public init(route: Route) {
         self.route = route
@@ -96,9 +120,13 @@ public final class Guidance {
     ///     Used to avoid snapping onto the opposite carriageway of a divided road.
     ///   - speed: the GPS speed in m/s, when valid. Otherwise the speed is estimated
     ///     from progress along the route.
+    ///   - reportedSpeed: the speed Core Location reports in m/s (negative: unknown), even
+    ///     when too inaccurate for `speed`. Tells whether the rider is moving, for rerouting.
+    ///     Defaults to `speed`.
     ///   - time: when the fix was taken.
     public func update(_ location: Coordinate, accuracy: Double = 10, course: Double? = nil,
-                       speed gpsSpeed: Double? = nil, time: Date = Date()) -> GuidanceUpdate? {
+                       speed gpsSpeed: Double? = nil, reportedSpeed: Double? = nil,
+                       time: Date = Date()) -> GuidanceUpdate? {
         let shape = route.shape, cum = route.cumulative
         guard shape.count >= 2, route.maneuvers.count >= 2 else { return nil }
 
@@ -150,7 +178,7 @@ public final class Guidance {
         var best = nearest(from: along - 30, to: max(along + maxJumpAhead, reference + expected / 2 + 50),
                            penalizeJumps: true)
         var reacquired = false
-        if best.d > offRouteDistance {
+        if best.d > corridor {
             best = nearest(from: nil, to: nil, penalizeJumps: false)  // re-acquire anywhere, e.g. after a detour
             reacquired = true
         }
@@ -188,27 +216,49 @@ public final class Guidance {
         routeSpeed = max(0, routeSpeed)
         lastDistanceFromRoute = best.d
 
-        // Next maneuver ahead of us (index 0 is the "start" instruction).
+        // Next maneuver ahead of us (index 0 is the "start" instruction). Shortly before
+        // it the one after it is shown instead, so the rider sees what comes next while
+        // turning. Once shown it stays, unless the fix falls back well before the corner,
+        // so GPS jitter or braking for the turn doesn't flick the watch between the two.
+        // A roundabout is passed only at its exit (`parseRoute` merged the exit maneuver
+        // into it), so "exit 2" stays up while riding round; its distance shows 0 there.
         let maneuvers = route.maneuvers
-        let nextIndex = (1..<maneuvers.count).first {
-            cum[min(maneuvers[$0].beginShapeIndex, cum.count - 1)] > along + 0.5
-        } ?? maneuvers.count - 1
-        let next = maneuvers[nextIndex]
-        let toManeuver = max(0, cum[min(next.beginShapeIndex, cum.count - 1)] - along)
+        func start(_ i: Int) -> Double { cum[min(maneuvers[i].beginShapeIndex, cum.count - 1)] }
+        func corner(_ i: Int) -> Double {
+            maneuvers[i].type == 26 ? cum[min(maneuvers[i].endShapeIndex, cum.count - 1)] : start(i)
+        }
+        let nextIndex = (1..<maneuvers.count).first { corner($0) > along + 0.5 } ?? maneuvers.count - 1
+        let toCorner = max(0, corner(nextIndex) - along)
+        let lead = min(switchLead + routeSpeed, maxSwitchLead)  // + 1 s of travel
+        // The corner's own step must have been up for `minStepTime` first: a new route (trip
+        // start or reroute) can begin within the lead of its first turn, which would otherwise
+        // never be shown.
+        let seen = shownIndex > nextIndex
+            || (shownIndex == nextIndex && time.timeIntervalSince(shownSince ?? time) >= minStepTime)
+        var index = nextIndex + 1 < maneuvers.count && toCorner <= lead && seen ? nextIndex + 1 : nextIndex
+        // Never back to an earlier step unless the fix is well before the corner passed last,
+        // also with corners closer together than the lead.
+        if index < shownIndex, corner(shownIndex - 1) - along <= maxSwitchLead + 15 { index = shownIndex }
+        if index != shownIndex { shownSince = time }
+        shownIndex = index
+        let toManeuver = max(0, start(shownIndex) - along)
         let remaining = max(0, route.totalLength - along)
 
-        if best.d > max(offRouteDistance, accuracy) {
-            offRouteCount += 1
-        } else {
+        // A fix without a speed (Core Location's -1) neither counts nor resets.
+        if best.d <= max(offRouteDistance, accuracy) {
             offRouteCount = 0
+        } else if let reported = reportedSpeed ?? gpsSpeed, reported >= 0 {
+            offRouteCount = reported >= offRouteMinSpeed ? offRouteCount + 1 : 0
         }
-        let arrived = nextIndex == maneuvers.count - 1 && toManeuver <= arrivalRadius
-            && best.d <= max(offRouteDistance, accuracy)
+        let arrived = nextIndex == maneuvers.count - 1 && toCorner <= arrivalRadius
+            && best.d <= max(corridor, accuracy)
 
         return GuidanceUpdate(
-            maneuver: next,
-            maneuverIndex: nextIndex,
+            maneuver: maneuvers[shownIndex],
+            maneuverIndex: shownIndex,
             distanceToManeuver: toManeuver,
+            cornerIndex: nextIndex,
+            distanceToCorner: toCorner,
             remainingDistance: remaining,
             remainingTime: route.totalLength > 0 ? route.totalTime * remaining / route.totalLength : 0,
             distanceFromRoute: best.d,
@@ -258,19 +308,25 @@ public struct WatchContext: Sendable {
 }
 
 /// Builds the JSON the watchapp's phone-side JavaScript fetches from 127.0.0.1.
+/// Every payload carries `poll`: the suggested time in ms until the watch asks again.
 public enum WatchStep {
+    /// Further from the route than this, the watch stops counting the distance down
+    /// (speed 0) and asks every second: the rider may be turning off, and riding on
+    /// no longer brings the maneuver closer.
+    static let countdownCorridor = 15.0
+
     public static func idle(_ ctx: WatchContext) -> [String: Any] {
-        ctx.fields.merging(["active": false]) { $1 }
+        ctx.fields.merging(["active": false, "poll": 3000]) { $1 }
     }
 
     /// A trip has started but there's no route or GPS fix yet.
     public static func routing(_ ctx: WatchContext) -> [String: Any] {
-        ctx.fields.merging(["active": false, "routing": true]) { $1 }
+        ctx.fields.merging(["active": false, "routing": true, "poll": 1000]) { $1 }
     }
 
     /// The trip is over. `arrived` false: stopped on the phone.
     public static func ended(arrived: Bool, _ ctx: WatchContext) -> [String: Any] {
-        ctx.fields.merging(["active": false, "ended": true, "arrived": arrived]) { $1 }
+        ctx.fields.merging(["active": false, "ended": true, "arrived": arrived, "poll": 3000]) { $1 }
     }
 
     /// The next step, with every number as of the GPS fix (`fixTime`) so the watch
@@ -278,7 +334,8 @@ public enum WatchStep {
     /// - Parameter routeGeneration: goes up with each new route or reroute, so `stepId`
     ///   changes with every step, even when two turns in a row have the same text.
     public static func step(_ u: GuidanceUpdate, routeGeneration: Int, _ ctx: WatchContext) -> [String: Any] {
-        ctx.fields.merging([
+        let speed = u.distanceFromRoute > countdownCorridor ? 0 : max(0, u.speed)
+        return ctx.fields.merging([
             "active": true,
             "stepId": routeGeneration * 1000 + u.maneuverIndex,
             "maneuver": WatchManeuver(valhallaType: u.maneuver.type).rawValue,
@@ -287,9 +344,19 @@ public enum WatchStep {
             "remainM": Int(u.remainingDistance.rounded()),
             "remainS": Int(u.remainingTime.rounded()),
             // cm/s precision as a Decimal, so the JSON says 9.37 rather than 9.3699999999999992
-            "speed": Decimal(Int((max(0, u.speed) * 100).rounded())) / 100,
+            "speed": Decimal(Int((speed * 100).rounded())) / 100,
             "fixTime": Int64((u.fixTime.timeIntervalSince1970 * 1000).rounded()),
+            "poll": poll(u),
         ]) { $1 }
+    }
+
+    /// Every second near a maneuver or off the route, every 3s within 1 km of one,
+    /// otherwise every 10s. The corner being taken counts too: once the step after it
+    /// is shown, that maneuver may be far away, but a missed turn must reach the watch fast.
+    static func poll(_ u: GuidanceUpdate) -> Int {
+        let near = min(u.distanceToManeuver, u.distanceToCorner)
+        if near < 300 || u.distanceFromRoute > countdownCorridor { return 1000 }
+        return near < 1000 ? 3000 : 10000
     }
 
     /// The watch keeps 96 bytes per instruction. Trim at a character boundary

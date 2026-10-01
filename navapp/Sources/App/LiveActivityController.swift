@@ -61,7 +61,7 @@ final class LiveActivityController {
     /// which also keeps pushing the stale date forward.
     func update(_ update: GuidanceUpdate, vietnamese: Bool) {
         // `vietnamese` isn't needed: the widget localizes its own texts, and the
-        // instruction already comes from Valhalla in the phone language.
+        // instruction (`InstructionText`) is already in the route's language, the phone's.
         guard destinationName != nil else { return }
         let state = Self.state(for: update)
         #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)

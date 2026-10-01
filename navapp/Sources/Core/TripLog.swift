@@ -9,7 +9,10 @@ import Foundation
 /// row being written is lost. Safe to call from any thread.
 public final class TripLog: @unchecked Sendable {
     public static let keep = 5
-    static let header = "time,event,lat,lon,accuracy,speed,course,along,to_maneuver,maneuver_index,from_route,reroute,detail"
+    /// Columns added later go after `detail`, so scripts written for older logs still work.
+    /// `to_maneuver` and `maneuver_index` are the step shown; `to_corner` is the distance to
+    /// the next maneuver actually ahead (for a roundabout, to its exit).
+    static let header = "time,event,lat,lon,accuracy,speed,course,along,to_maneuver,maneuver_index,from_route,reroute,detail,to_corner"
 
     public let url: URL
     private let queue = DispatchQueue(label: "TripLog")
@@ -47,7 +50,7 @@ public final class TripLog: @unchecked Sendable {
     public func guidance(_ u: GuidanceUpdate) {
         let columns = ["", "", "", Self.number(u.speed), "", Self.number(u.along), Self.number(u.distanceToManeuver),
                        String(u.maneuverIndex), Self.number(u.distanceFromRoute), u.needsReroute ? "1" : "0"]
-        row(u.fixTime, "guidance", columns, u.arrived ? "arrived" : "")
+        row(u.fixTime, "guidance", columns, u.arrived ? "arrived" : "", toCorner: Self.number(u.distanceToCorner))
     }
 
     /// A payload handed to the step server, as JSON.
@@ -76,9 +79,9 @@ public final class TripLog: @unchecked Sendable {
         }
     }
 
-    private func row(_ time: Date, _ event: String, _ columns: [String], _ detail: String) {
-        let line = ([String(format: "%.3f", time.timeIntervalSince1970), event] + columns + [Self.quoted(detail)])
-            .joined(separator: ",") + "\n"
+    private func row(_ time: Date, _ event: String, _ columns: [String], _ detail: String, toCorner: String = "") {
+        let line = ([String(format: "%.3f", time.timeIntervalSince1970), event] + columns
+                    + [Self.quoted(detail), toCorner]).joined(separator: ",") + "\n"
         queue.async { try? self.handle?.write(contentsOf: Data(line.utf8)) }
     }
 

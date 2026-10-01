@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="484" height="72" viewBox="-4 -4 484 76">
+<!-- PebbleOpenNav watch icons as drawn today. Box 44x52 (magenta, dashed), 8 px strokes, round caps/joins. -->
+<g id="straight" transform="translate(0 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M21.5 48 L21.5 4 M21 4.5 L7 18.5 M21 4.5 L35 18.5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">straight</text>
+</g>
+<g id="left" transform="translate(72 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M39.5 48 L39.5 18 M39 18.5 L4 18.5 M4 18.5 L18 4.5 M4 18.5 L18 32.5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">left</text>
+</g>
+<g id="right" transform="translate(144 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M4.5 48 L4.5 18 M4 18.5 L39 18.5 M39 18.5 L25 4.5 M39 18.5 L25 32.5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">right</text>
+</g>
+<g id="slight left" transform="translate(216 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M33.5 48 L33.5 28 M33 28.5 L9 4.5 M9 4.5 L25 4.5 M9.5 4 L9.5 20" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">slight left</text>
+</g>
+<g id="slight right" transform="translate(288 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M10.5 48 L10.5 28 M10 28.5 L34 4.5 M34 4.5 L18 4.5 M34.5 4 L34.5 20" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">slight right</text>
+</g>
+<g id="u-turn" transform="translate(360 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<path d="M38.5 48 L38.5 4 M38 4.5 L16 4.5 M16.5 4 L16.5 40 M16 40.5 L5 29.5 M16 40.5 L27 29.5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">u-turn</text>
+</g>
+<g id="arrive" transform="translate(432 0)">
+<rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
+<circle cx="22" cy="26" r="20" fill="none" stroke="#000" stroke-width="6"/>
+<circle cx="22" cy="26" r="15" fill="#000"/>
+<text x="22.0" y="66" font-family="Helvetica" font-size="9" text-anchor="middle">arrive</text>
+</g>
+</svg>

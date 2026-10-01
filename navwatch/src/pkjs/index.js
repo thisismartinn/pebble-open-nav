@@ -46,15 +46,18 @@ function T(key, values) {
 
 // Once the nav app has told us the phone's language, every message carries it so
 // the watch's own texts match. Before that the watch keeps its own language.
-function send(dict) {
+// poll: the nav app's suggested ms until the next Tick, from this reply only; without
+// it (older nav app, or State 3) the watch keeps its own 3 s / 1 s rule.
+function send(dict, poll) {
   if (navLang) dict.Lang = navLang;
   if (navTheme !== null) dict.Theme = navTheme;
   if (navThemeAuto !== null) dict.ThemeAuto = navThemeAuto;
+  if (poll > 0) dict.Poll = poll;
   Pebble.sendAppMessage(dict);
 }
 
-// Set once a real step arrived this trip. A failed fetch after that keeps the
-// step on the watch (it shows Disconnected after a while) and skips the GPS probe.
+// Set once a real step arrived this trip. State 3 after that keeps the step on the
+// watch (Disconnected after two in a row) and skips the GPS probe.
 var hadStep = false;
 
 // The start screen shows how the Pebble app's own GPS behaves: whether it answers
@@ -102,11 +105,11 @@ function probeGps() {
   );
 }
 
-function sendState(state) {
+function sendState(state, poll) {
   if (!hadStep) probeGps();
   var dict = { State: state };
   if (gpsLine) dict.Gps = gpsLine;
-  send(dict);
+  send(dict, poll);
 }
 
 // The nav app already cuts the instruction to 90 UTF-8 bytes on a character
@@ -136,6 +139,7 @@ function handleStep(s, receivedAt) {
   if (s.lang === 'vi' || s.lang === 'en') navLang = s.lang;
   if (s.theme === 'light' || s.theme === 'dark') navTheme = s.theme === 'light' ? 1 : 0;
   if (typeof s.themeAuto === 'boolean') navThemeAuto = s.themeAuto ? 1 : 0;
+  var poll = Math.round(Number(s.poll));  // NaN when missing: no Poll
   if (s.ended) {
     hadStep = false;
     // The nav app keeps answering "ended" until the next trip, so a watchapp opened
@@ -143,13 +147,13 @@ function handleStep(s, receivedAt) {
     probeGps();
     var ended = { Ended: 1, Arrived: s.arrived ? 1 : 0 };
     if (gpsLine) ended.Gps = gpsLine;
-    send(ended);
+    send(ended, poll);
   } else if (s.routing) {
     hadStep = false;
-    sendState(STATE_ROUTING);
+    sendState(STATE_ROUTING, poll);
   } else if (!s.active) {
     hadStep = false;
-    sendState(STATE_NO_TRIP);
+    sendState(STATE_NO_TRIP, poll);
   } else {
     hadStep = true;
     var fixTime = Number(s.fixTime);
@@ -163,32 +167,37 @@ function handleStep(s, receivedAt) {
       Speed: Math.max(0, Math.round((Number(s.speed) || 0) * 100)),
       // How old the fix was when we got it; the watch adds its own time since receipt.
       Age: fixTime > 0 ? Math.min(Math.max(0, receivedAt - fixTime), 3600000) : 0
-    });
+    }, poll);
   }
 }
 
+// State 3 only when the nav app answers wrongly or refuses the connection. A request
+// that times out sends the watch nothing: it counts the silence itself (Connecting…,
+// then Disconnected), because a slow phone isn't a closed nav app.
 function fetchStep() {
   var xhr = new XMLHttpRequest();
   var finished = false;
-  function fail() {
-    if (finished) return;
+  // True for the first outcome only (answer, error or timeout).
+  function finish() {
+    if (finished) return false;
     finished = true;
-    sendState(STATE_NO_PHONE);
+    clearTimeout(watchdog);
+    return true;
   }
-  // Our own timeout as well as xhr.timeout: not every JS runtime reports a refused connection.
+  // Our own timeout: not every JS runtime reports a refused connection. It runs before
+  // xhr.timeout, so a slow answer is always silence: some runtimes report their own
+  // timeout through onerror, which would send State 3 (nav app gone).
   var watchdog = setTimeout(function () {
+    if (!finish()) return;
     try { xhr.abort(); } catch (e) {}
-    fail();
     setTimeout(function () { release(xhr); }, 1000);  // let a late response find its instance
   }, REQUEST_TIMEOUT_MS);
 
   xhr.open('GET', STEP_URL + '?t=' + Date.now(), true);
-  xhr.timeout = REQUEST_TIMEOUT_MS;
+  xhr.timeout = REQUEST_TIMEOUT_MS + 1000;
   xhr.onload = function () {
-    if (finished) return;
-    finished = true;
+    if (!finish()) return;
     var receivedAt = Date.now();
-    clearTimeout(watchdog);
     release(xhr);
     var step = null;
     if (xhr.status === 200) {
@@ -202,10 +211,13 @@ function fetchStep() {
       sendState(STATE_NO_PHONE);  // error status or bad data: the nav app isn't answering properly
     }
   };
-  xhr.onerror = xhr.ontimeout = function () {
-    clearTimeout(watchdog);
+  xhr.onerror = function () {
+    if (!finish()) return;
     release(xhr);
-    fail();
+    sendState(STATE_NO_PHONE);  // e.g. connection refused: the nav app isn't running
+  };
+  xhr.ontimeout = function () {
+    if (finish()) release(xhr);  // no answer in time: send nothing
   };
   xhr.send();
 }
