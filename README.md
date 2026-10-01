@@ -1,95 +1,237 @@
 # PebbleOpenNav
 
-A navigation app on the iPhone does the routing and GPS and serves the next step on
-`127.0.0.1:8765`. A Pebble watchapp polls it every 3 s through the Pebble app's
-JavaScript runtime and shows the step. This is the same idea as G Navigation's
-Amazfit mode.
+Turn-by-turn navigation on your Pebble watch, driven by your iPhone. The iPhone app plans
+the route on OpenStreetMap data and follows you by GPS, even with the phone locked in a
+pocket. The watch shows the next turn, how far away it is, and when you'll arrive, and
+buzzes you before each turn.
+
+It is built for riding a motorbike or scooter in a city like Hanoi, where a glance at the
+wrist beats a phone on the handlebars. It works just as well by car, bike or on foot.
+
+![PebbleOpenNav on Pebble Time 2, Pebble Round 2 and Pebble 2 Duo, light theme](docs/screenshots/watches-light.png)
+![The same screens in the dark theme](docs/screenshots/watches-dark.png)
+
+## Features
+
+### On the watch
+- **The next turn at a glance:** a turn arrow, the distance to the turn, a short instruction
+  ("U-turn at Liễu Giai", "Roundabout: exit 2 onto Khuất Duy Tiến"), the remaining distance,
+  the minutes left and your ETA.
+- **A smooth countdown:** between updates from the phone, the watch counts the distance down
+  itself from your speed, so the number moves every second without draining the battery.
+- **Vibrations:**
+  - a double nudge at 200 m and 100 m before a turn;
+  - a short buzz when the next instruction appears, about 30 m before the corner, which is
+    your cue to signal;
+  - a single light tap when you arrive.
+- **The next instruction early:** it appears about 30 m before each corner, so you know
+  what comes after the turn you're taking.
+- **Honest connection status:** "Connecting…" after 20 s without news from the phone, then
+  "Disconnected" after 40 s, or at once if PebbleOpenNav was closed. The last step stays on
+  screen meanwhile.
+- **Light and dark themes**, switching automatically at sunrise and sunset where you are.
+  The light theme is easier to read in sunlight.
+- **Designed for each watch:** bigger text on Pebble Time 2 and Pebble Round 2 (it wraps
+  inside the circle), and a crisp black-and-white layout on Pebble 2 Duo.
+- **Start and end screens:** a start screen with a GPS check, and an end screen that closes
+  the app by itself after 10 s.
+
+![Pebble Round 2: start, Connecting…, Disconnected and arrival screens](docs/screenshots/round-states.png)
+
+### On the iPhone
+- **Search the way you do in Apple Maps:** suggestions as you type, and any place on the
+  map can be tapped to open a place card with a **Go** button. Street addresses with a house
+  number also come from OpenStreetMap (Photon).
+- **Routes for motorbike, car, bicycle or walking**, from the Valhalla routing engine on
+  OpenStreetMap data, with live traffic shown on the map.
+- **Works in your pocket:** background GPS keeps guiding with the phone locked.
+- **Fast rerouting:** a new route within seconds of leaving the old one, without false alarms
+  while GPS warms up indoors.
+- **Live Activity** on the Lock Screen and in the Dynamic Island.
+- **Pebble section:**
+  - the watch's connection ("Checked in 2s ago • 340 times, longest gap: 11s");
+  - the watch theme: Automatic, Light or Dark;
+  - **Install Watchapp**: hands the bundled watchapp to the Pebble app;
+  - **Share Trip Log**: a CSV of your last five trips, for checking a ride afterwards.
+- **Native iOS look:** SwiftUI, the system font and Liquid Glass on iOS 26. It runs from
+  iOS 17.
+
+### Languages
+Vietnamese and English, following the phone's language, in both the iPhone app and the
+watchapp. Directions on the watch need the watch's Vietnamese language pack for the accented
+letters.
+
+## How it works
 
 ```
-iPhone: Nav Test app ──127.0.0.1──> Pebble app (watchapp JS) ──Bluetooth──> Pebble watch
-        GPS + Valhalla + Photon                                          arrow, distance, ETA
+ iPhone                                                                         Pebble
+┌───────────────────────────┐   127.0.0.1:8765   ┌──────────────────────┐  Bluetooth  ┌──────────┐
+│ PebbleOpenNav             │ ◀──── GET /step ── │ Pebble iPhone app    │ ◀── Tick ── │ watchapp │
+│ GPS · route · guidance    │ ── next step ────▶ │ (watchapp JavaScript)│ ── step ──▶ │          │
+└───────────────────────────┘                    └──────────────────────┘             └──────────┘
 ```
 
-## What's here
+1. **GPS and guidance:** PebbleOpenNav gets a GPS fix about once a second. It places you on
+   the route and works out the next instruction, the distance to it, your speed along the
+   route, and the distance and time left.
+2. **A tiny local server:** it serves the latest step on `127.0.0.1:8765`, which only the
+   phone itself can reach.
+3. **The watch asks:** the watchapp's JavaScript runs inside the Pebble iPhone app, which
+   holds the Bluetooth link. Each time the watch asks for an update, the JavaScript fetches
+   the step and sends it to the watch as one small message.
+4. **The phone sets the pace:** each answer says when to ask next. That's every second near a
+   turn or when you're off the route, every 3 s within 1 km, and every 10 s beyond. In between,
+   the watch counts down by itself.
 
-| Folder | What it is |
-| --- | --- |
-| `navwatch/` | Pebble watchapp (C + JavaScript). Build it with `pebble build`; the release file is `PebbleOpenNav.pbw`. |
-| `navwatch/mock_server.py` | Fake route server for the emulator (`SPEED=60` for a fast trip, `/start`, `/stop`). |
-| `navapp/Sources/Core/` | Routing (Valhalla), search (Photon), guidance, 127.0.0.1 server. Shared by the app and `navsim`. |
-| `navapp/Sources/App/` | iPhone app (SwiftUI + MapKit): search, trip, background GPS. |
-| `navapp/Tools/navsim/` | Mac stand-in for the iPhone app: drives a real route and serves the watch emulator. |
-| `navapp/scripts/build-ipa.sh` | Builds an unsigned `NavTest.ipa` (needs Xcode + `brew install xcodegen`). |
-| `.github/workflows/build-ipa.yml` | Same build on GitHub's macOS runners, for when there's no Xcode locally. |
+Your coordinates never reach the watch, only the result. The full contract (JSON fields,
+message keys, timings, connection states) is in [PROTOCOL.md](PROTOCOL.md).
 
-## Watch ↔ phone protocol
+## Install
 
-See [PROTOCOL.md](PROTOCOL.md): the `/step` JSON, the AppMessage keys, and how the watch
-counts down between updates.
+You need:
+- an iPhone with iOS 17 or later;
+- a Pebble watch, paired with the Pebble iPhone app;
+- a Mac or PC to sideload the iPhone app.
 
-## Language
+1. **Get the iPhone app.**
+   - Open the latest successful [**Build iPhone app**](../../actions/workflows/build-ipa.yml)
+     run on GitHub Actions and download the **PebbleOpenNav-ipa** artifact. It's an unsigned
+     `PebbleOpenNav.ipa`.
+   - Or build it yourself (see below).
+2. **Sideload it** with [Sideloadly](https://sideloadly.io) or [AltStore](https://altstore.io)
+   using your Apple ID.
+   - With a free Apple ID, the app must be re-signed every 7 days.
+   - On iOS 16 and later, turn on **Settings → Privacy & Security → Developer Mode**.
+3. **Allow location** when PebbleOpenNav asks. Keep **Precise Location** on, because
+   turn-by-turn needs it.
+4. **Install the watchapp.** In PebbleOpenNav, open **Pebble → Install Watchapp** and choose
+   the Pebble app. You can also open `PebbleOpenNav.pbw` from Files or AirDrop with the Pebble
+   app.
+5. **Ride.**
+   - Search for a place, pick your vehicle and tap **Go**.
+   - Open **PebbleOpenNav** on the watch.
+   - Lock the phone and put it away.
 
-Both apps follow the phone's language: Vietnamese if it's set to Vietnamese,
-English otherwise.
+## Build it yourself
 
-- **iPhone app:** UI texts in `navapp/Resources/{en,vi}.lproj/Localizable.strings`,
-  the permission prompt in `vi.lproj/InfoPlist.strings`, and Valhalla directions in
-  `vi-VN` or `en-US`.
-- **Watchapp:** the nav app sends `"lang": "vi" | "en"` in every reply, and the
-  JavaScript passes it to the watch as `Lang`. Until the nav app answers, the watch
-  uses its own language (`Pebble.getActiveWatchInfo().language`, set by its language
-  pack). `navigator.language` isn't used, because the Pebble iOS app is English-only
-  and reports e.g. `en_VN` on a Vietnamese phone.
-- Vietnamese uses a decimal comma for distances ("Còn 8,4 km").
+### iPhone app
+- **GitHub Actions** (no Mac needed): pushing changes under `navapp/` runs
+  [`build-ipa.yml`](.github/workflows/build-ipa.yml). It builds on the `macos-26` runner with
+  its newest stable Xcode 26, which Liquid Glass needs. You can also start it by hand from
+  the Actions tab.
+- **Locally:** you need Xcode 26 or later and XcodeGen.
 
-## Watch display
+  ```bash
+  brew install xcodegen
+  ```
 
-Light theme (white background, dark text) on every watch, colour or black-and-white,
-because it's easier to read in sunlight. It's set in the iPhone app under
-**Pebble → Watch Display**:
+  ```bash
+  navapp/scripts/build-ipa.sh
+  ```
 
-- **Automatic** (default): light between sunrise and sunset at your GPS position,
-  from `Sources/Core/Sun.swift`.
-- **Light** or **Dark**: always that theme.
+  The project is generated from [`navapp/project.yml`](navapp/project.yml). The build writes
+  `navapp/build/PebbleOpenNav.ipa`.
+- **Type-check without Xcode** (Mac Catalyst with the Command Line Tools):
 
-Every payload carries `"theme": "light" | "dark"`. The watch remembers the last theme
-for its next launch.
+  ```bash
+  navapp/scripts/typecheck.sh
+  ```
 
-## Liquid Glass
-
-The iPhone app only gets the iOS 26 look when built with the iOS 26+ SDK, so CI
-uses the `macos-26` runner with its newest stable Xcode. `build-ipa.sh` fails if the
-built app's `DTSDKName` is older than `iphoneos26`.
-
-## Test on your iPhone
-
-### 1. Background test (works now, no .ipa needed)
-
-1. AirDrop `PebbleOpenNav.pbw` to the iPhone and open it with the Pebble app.
-2. Open **Nav Test** on the watch. With no nav app running it goes into **probe mode**:
-   `Tick N, max gap X s` plus the age of the Pebble app's own GPS fix.
-3. Lock the phone, put it in your pocket and walk for 10 minutes.
-
-- **Tick keeps rising, max gap stays around 3–6 s:** the Pebble app answers the watch
-  from the background. This is what the full design relies on.
-- **"No reply for N s" on top:** iOS suspended the Pebble app. The design needs rethinking.
-- **GPS error or stale while locked:** expected. The Pebble app has no background
-  location, which is why the nav app does its own GPS.
-
-### 2. Full test (needs the .ipa)
-
-1. Install `NavTest.ipa` with Sideloadly or AltStore. A free Apple ID build lasts 7 days.
-2. In Nav Test, search for a place, pick **Motorbike**, then tap a result.
-3. Open Nav Test on the watch, lock the phone and ride.
-4. Afterwards the app shows `Watch checked in … · longest gap N s`, which shows whether
-   polling kept up while locked.
-
-## Emulator (Mac)
+### Watchapp
+You need the [Pebble SDK](https://developer.repebble.com) (`pebble` tool).
 
 ```bash
-navapp/build/navsim --route-json route.json --speed 10   # or pass from/to "lat,lon"
-cd navwatch && pebble install --emulator emery
+cd navwatch && pebble build
 ```
 
-Start the server **before** the watchapp. The emulator's JavaScript runtime hangs on a
-refused connection, which the real Pebble iPhone app doesn't do.
+The build writes `navwatch/build/navwatch.pbw` for all seven Pebble platforms. To bundle it
+with the iPhone app, copy it to `navapp/Resources/PebbleOpenNav.pbw`. After changing
+`messageKeys` in `navwatch/package.json`, run `pebble clean` first.
+
+### Testing without a ride
+- **Watch emulator with a fake phone:** [`navwatch/mock_server.py`](navwatch/mock_server.py)
+  plays a scripted trip on `127.0.0.1:8765`. Start it **before** installing the watchapp,
+  because the emulator's JavaScript hangs on a refused connection.
+
+  ```bash
+  python3 navwatch/mock_server.py
+  ```
+
+  ```bash
+  pebble install --emulator emery
+  ```
+
+  ```bash
+  curl '127.0.0.1:8765/start?at=1500&theme=light&lang=en'
+  ```
+
+  `/pause` shows Connecting… and then Disconnected, `/error` shows Disconnected after two
+  failed requests, and `/resume` goes back to normal. See
+  [`navwatch/README.md`](navwatch/README.md).
+- **Real routes on the Mac:** [`navsim`](navapp/Tools/navsim/main.swift) runs the iPhone
+  app's guidance code.
+  - It can drive a real Valhalla route at a set speed and serve it to the watch emulator.
+  - `--replay` feeds a trip log from **Share Trip Log** back through the guidance, to see
+    what the watch would have shown.
+
+## Supported watches
+
+| Watch | SDK platform | Layout |
+|---|---|---|
+| Pebble Time 2 | `emery` | colour, large text |
+| Pebble Round 2 | `gabbro` | colour, round, large text |
+| Pebble 2 Duo | `flint` | black and white |
+| Pebble Time, Time Steel | `basalt` | colour |
+| Pebble Time Round | `chalk` | colour, round |
+| Pebble 2 | `diorite` | black and white |
+| Pebble, Pebble Steel | `aplite` | black and white |
+
+## Project layout
+
+| Path | What it is |
+|---|---|
+| `navapp/Sources/Core/` | Routing (Valhalla), address search (Photon), guidance, the turn texts, the local server, trip logs. Shared with `navsim`. |
+| `navapp/Sources/App/` | The iPhone app (SwiftUI and MapKit): search, place cards, trip, Pebble settings. |
+| `navapp/Sources/Widget/` | The Live Activity. |
+| `navapp/Tools/navsim/` | Mac stand-in for the iPhone app, and the trip-log replay. |
+| `navwatch/src/c/` | The watchapp (C). |
+| `navwatch/src/pkjs/` | The watchapp's JavaScript, which runs inside the Pebble iPhone app. |
+| `navwatch/mock_server.py` | Fake phone for the watch emulator. |
+| `design/` | The watch layout spec ([`WATCH_LAYOUT.md`](design/WATCH_LAYOUT.md)) and the exact values from the Figma design. |
+| `PROTOCOL.md` | The phone ↔ JavaScript ↔ watch contract. |
+
+## Privacy
+
+There are no accounts, analytics or servers of our own. Three services are involved:
+- **Apple** receives your search text through MapKit, as in Apple Maps.
+- **[Photon](https://photon.komoot.io)** by komoot receives searches that start with a house
+  number.
+- **Valhalla**, on the public FOSSGIS server `valhalla1.openstreetmap.de`, receives
+  your position and the destination when a route is calculated, and your position again on a
+  reroute.
+
+GPS runs only during a trip you start. Trip logs stay on the phone (the last five trips) and
+leave it only when you tap **Share Trip Log**.
+
+## Limitations
+- iPhone only.
+- The app isn't on the App Store: it is sideloaded, and with a free Apple ID it is re-signed
+  every 7 days.
+- Routing needs an internet connection and uses a public server without guarantees.
+- Live traffic is shown on the map but not used for routes or ETAs: Valhalla has no traffic
+  data.
+- Roundabouts, merges and ferries show the straight-ahead arrow for now. Dedicated icons are
+  being designed.
+
+## Credits
+- Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, under
+  the ODbL.
+- Routing by [Valhalla](https://github.com/valhalla/valhalla), on the public server run by
+  [FOSSGIS](https://www.fossgis.de).
+- Address search by [Photon](https://github.com/komoot/photon) from komoot.
+- Place search, the map and traffic by Apple MapKit.
+- Built on [PebbleOS](https://github.com/coredevices/pebbleos) and the Pebble SDK.
+
+## License
+
+[MIT](LICENSE)
