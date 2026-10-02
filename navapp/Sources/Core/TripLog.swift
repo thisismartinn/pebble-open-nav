@@ -11,8 +11,9 @@ public final class TripLog: @unchecked Sendable {
     public static let keep = 5
     /// Columns added later go after `detail`, so scripts written for older logs still work.
     /// `to_maneuver` and `maneuver_index` are the step shown; `to_corner` is the distance to
-    /// the next maneuver actually ahead (for a roundabout, to its exit).
-    static let header = "time,event,lat,lon,accuracy,speed,course,along,to_maneuver,maneuver_index,from_route,reroute,detail,to_corner"
+    /// the next maneuver actually ahead (for a roundabout, to its exit). A guidance row's
+    /// detail is "held" when the fix couldn't be placed on the route.
+    static let header = "time,event,lat,lon,accuracy,speed,course,along,to_maneuver,maneuver_index,from_route,reroute,detail,to_corner,speed_accuracy,course_accuracy"
 
     public let url: URL
     private let queue = DispatchQueue(label: "TripLog")
@@ -40,17 +41,18 @@ public final class TripLog: @unchecked Sendable {
 
     /// A GPS fix as delivered by Core Location; `time` is the fix's own timestamp.
     public func fix(time: Date, lat: Double, lon: Double, accuracy: Double, speed: Double, course: Double,
-                    detail: String = "") {
+                    speedAccuracy: Double, courseAccuracy: Double, detail: String = "") {
         let columns = [String(format: "%.7f", lat), String(format: "%.7f", lon)]
             + [accuracy, speed, course].map(Self.number) + ["", "", "", "", ""]
-        row(time, "fix", columns, detail)
+        row(time, "fix", columns, detail, extra: ["", Self.number(speedAccuracy), Self.number(courseAccuracy)])
     }
 
     /// What guidance made of a fix.
     public func guidance(_ u: GuidanceUpdate) {
         let columns = ["", "", "", Self.number(u.speed), "", Self.number(u.along), Self.number(u.distanceToManeuver),
                        String(u.maneuverIndex), Self.number(u.distanceFromRoute), u.needsReroute ? "1" : "0"]
-        row(u.fixTime, "guidance", columns, u.arrived ? "arrived" : "", toCorner: Self.number(u.distanceToCorner))
+        row(u.fixTime, "guidance", columns, u.arrived ? "arrived" : u.held ? "held" : "",
+            extra: [Self.number(u.distanceToCorner)])
     }
 
     /// A payload handed to the step server, as JSON.
@@ -79,9 +81,10 @@ public final class TripLog: @unchecked Sendable {
         }
     }
 
-    private func row(_ time: Date, _ event: String, _ columns: [String], _ detail: String, toCorner: String = "") {
+    /// `extra`: the columns after `detail` (`to_corner` on), as far as there are any.
+    private func row(_ time: Date, _ event: String, _ columns: [String], _ detail: String, extra: [String] = []) {
         let line = ([String(format: "%.3f", time.timeIntervalSince1970), event] + columns
-                    + [Self.quoted(detail), toCorner]).joined(separator: ",") + "\n"
+                    + [Self.quoted(detail)] + (extra + ["", "", ""]).prefix(3)).joined(separator: ",") + "\n"
         queue.async { try? self.handle?.write(contentsOf: Data(line.utf8)) }
     }
 

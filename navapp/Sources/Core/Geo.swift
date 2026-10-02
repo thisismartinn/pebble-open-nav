@@ -18,6 +18,12 @@ public struct Coordinate: Equatable, Sendable {
             + cos(lat * .pi / 180) * cos(other.lat * .pi / 180) * sin(dLon / 2) * sin(dLon / 2)
         return 2 * r * atan2(sqrt(a), sqrt(1 - a))
     }
+
+    /// Direction to `other` in degrees from north (-180...180), from a local flat
+    /// approximation like `project`.
+    public func bearing(to other: Coordinate) -> Double {
+        atan2((other.lon - lon) * cos(lat * .pi / 180), other.lat - lat) * 180 / .pi
+    }
 }
 
 /// Projects `p` onto segment a-b. Returns the fraction along the segment (0...1)

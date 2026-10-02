@@ -13,6 +13,8 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var camera: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var detent: PresentationDetent = ContentView.collapsed
+    /// The sheet's top edge in window coordinates, for the notice above it.
+    @State private var sheetTop: CGFloat?
 
     static let collapsed = PresentationDetent.fraction(0.3)
 
@@ -42,11 +44,19 @@ struct ContentView: View {
             if feature != nil, detent == .large { detent = .medium }
         }
         .onReceive(nav.$location) { search.near = $0 }
-        .overlay(alignment: .top) {
-            if let notice = nav.endNotice {
-                NoticeCapsule(text: notice.text)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+        // Just above the sheet, where the eyes already are, rather than at the top of a tall screen.
+        .overlay {
+            GeometryReader { geometry in
+                if let notice = nav.endNotice {
+                    NoticeCapsule(text: notice.text)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        // At most a capsule's height short of the top: the sheet may be pulled up meanwhile.
+                        .padding(.bottom, min(sheetTop.map { max(0, geometry.frame(in: .global).maxY - $0) + 32 } ?? 32,
+                                              max(0, geometry.size.height - 60)))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .allowsHitTesting(false)
         }
         .animation(.smooth, value: nav.endNotice)
         // Counted from when it can be seen: a ride usually ends with the phone locked.
@@ -59,7 +69,7 @@ struct ContentView: View {
             if nav.endNotice == notice { nav.endNotice = nil }
         }
         .sheet(isPresented: .constant(true)) {
-            TripSheet(nav: nav, search: search, detent: $detent)
+            TripSheet(nav: nav, search: search, detent: $detent, sheetTop: $sheetTop)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                 .presentationDragIndicator(.visible)
@@ -88,9 +98,8 @@ private struct TripSheet: View {
     @ObservedObject var nav: NavigationController
     @ObservedObject var search: SearchModel
     @Binding var detent: PresentationDetent
+    @Binding var sheetTop: CGFloat?
     @FocusState private var searchFocused: Bool
-    /// From focusing the field until Cancel; the keyboard also goes on Search or a scroll.
-    @State private var searching = false
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -106,7 +115,12 @@ private struct TripSheet: View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
         }
-        .onChange(of: nav.phase) { _, _ in searching = false }  // a place was picked, or a trip ended
+        .background { WindowFrameReader { sheetTop = $0.minY } }
+        // Pulling the sheet down from full height ends typing; the close button goes with it
+        // unless there's a search to clear.
+        .onChange(of: detent) { _, detent in
+            if detent != .large { searchFocused = false }
+        }
         // Alerts must come from the sheet: the view under a presented sheet can't show one.
         .alert("Something Went Wrong", isPresented: Binding(
             get: { nav.errorMessage != nil || search.errorMessage != nil },
@@ -171,20 +185,21 @@ private struct TripSheet: View {
         // field, which heads the sheet as in Maps.
         .toolbar(.hidden, for: .navigationBar)
         .topBar {
-            SheetSearchField(text: $search.query, focused: $searchFocused, showsCancel: searching,
+            SheetSearchField(text: $search.query, focused: $searchFocused,
+                             showsClose: searchFocused || !search.query.isEmpty,
+                             onActivate: {
+                                 searchFocused = true
+                                 detent = .large
+                             },
                              onSubmit: { search.search() },
-                             onCancel: {
+                             onClose: {
                                  search.reset()
                                  searchFocused = false
-                                 searching = false
                                  if detent == .large { detent = .medium }  // show the map again
                              })
         }
         .onChange(of: searchFocused) { _, active in
-            if active {
-                searching = true
-                detent = .large
-            }
+            if active { detent = .large }
         }
     }
 
@@ -242,6 +257,7 @@ private struct TripSheet: View {
             watchSection
         }
         .sheetGlassListBackground(detent)
+        .contentMargins(.top, Self.underTitle, for: .scrollContent)
     }
 
     private var guidanceList: some View {
@@ -249,7 +265,7 @@ private struct TripSheet: View {
             Section {
                 if let u = nav.update {
                     HStack(spacing: 16) {
-                        Image(systemName: WatchManeuver(valhallaType: u.maneuver.type).symbolName)
+                        Image(systemName: u.icon.symbolName)
                             .font(.largeTitle.weight(.semibold))
                             .foregroundStyle(.tint)
                             .frame(minWidth: 44)
@@ -283,7 +299,12 @@ private struct TripSheet: View {
             watchSection
         }
         .sheetGlassListBackground(detent)
+        .contentMargins(.top, Self.underTitle, for: .scrollContent)
     }
+
+    /// Space between the title bar and the first card while routing and navigating, so the
+    /// card sits as far below the title as the title is below the grabber (about 23 pt).
+    private static let underTitle: CGFloat = 6
 
     // MARK: Shared sections
 
@@ -316,11 +337,6 @@ private struct TripSheet: View {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
             }
-            if let pbw = Bundle.main.url(forResource: "PebbleOpenNav", withExtension: "pbw") {
-                ShareLink(item: pbw) {
-                    Label("Install Watchapp", systemImage: "square.and.arrow.up")
-                }
-            }
             if let log = nav.tripLogURL {
                 ShareLink(item: log) {
                     Label("Share Trip Log", systemImage: "doc.text")
@@ -329,8 +345,19 @@ private struct TripSheet: View {
         } header: {
             Text("Pebble")
         } footer: {
-            Text("Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.")
+            Text(versions)
         }
+    }
+
+    /// "PebbleOpenNav · v0.4 (iPhone) & v0.4 (Pebble)". The watchapp is installed on its own,
+    /// so it can be older; before v0.4 it didn't say its version.
+    private var versions: String {
+        let phone = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        guard nav.watchLink.lastCheckIn != nil else { return String(localized: "PebbleOpenNav · v\(phone) (iPhone)") }
+        if let watch = nav.watchLink.watchappVersion, watch.compare(phone, options: .numeric) != .orderedAscending {
+            return String(localized: "PebbleOpenNav · v\(phone) (iPhone) & v\(watch) (Pebble)")
+        }
+        return String(localized: "PebbleOpenNav · v\(phone) (iPhone) · Pebble app not up to date")
     }
 }
 
@@ -406,13 +433,16 @@ private struct SuggestionRow: View {
 }
 
 /// The sheet's search field. Stock parts in the system search field's look: a capsule of
-/// Liquid Glass on iOS 26, the filled rounded field before. Cancel shows while searching.
+/// Liquid Glass on iOS 26, the filled rounded field before. A round close button shows
+/// while searching, as in Maps.
 private struct SheetSearchField: View {
     @Binding var text: String
     var focused: FocusState<Bool>.Binding
-    let showsCancel: Bool
+    let showsClose: Bool
+    /// Any tap on the capsule: it opens the search, also when the field already has focus.
+    let onActivate: () -> Void
     let onSubmit: () -> Void
-    let onCancel: () -> Void
+    let onClose: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -420,9 +450,6 @@ private struct SheetSearchField: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                    .contentShape(Rectangle())
-                    .onTapGesture { focused.wrappedValue = true }
-                // The full height of the capsule is the text field, so a tap anywhere on it types.
                 TextField("Search for a place or address", text: $text)
                     .frame(minHeight: 44)
                     .focused(focused)
@@ -438,15 +465,35 @@ private struct SheetSearchField: View {
             }
             .padding(.horizontal, 12)
             .modifier(SearchFieldBackground())
-            if showsCancel {
-                Button("Cancel", action: onCancel)
+            // The glass reacts to a touch anywhere on the capsule, its padding too, so that
+            // whole area starts the search, not just the text field inside it.
+            .contentShape(.capsule)
+            .simultaneousGesture(TapGesture().onEnded { onActivate() })
+            if showsClose {
+                Button("Cancel", systemImage: "xmark", action: onClose)
+                    .labelStyle(.iconOnly)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .modifier(CloseButtonBackground())
+                    .buttonStyle(.plain)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 14)  // clear of the sheet's grabber, which the hidden bar used to leave room for
+        .padding(.top, 20)  // about 9 pt below the sheet's grabber, as in Maps
         .padding(.bottom, 8)
-        .animation(.smooth, value: showsCancel)
+        .animation(.smooth, value: showsClose)
+    }
+}
+
+private struct CloseButtonBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            content.background(Color(.tertiarySystemFill), in: Circle())
+        }
     }
 }
 
@@ -460,7 +507,7 @@ private struct SearchFieldBackground: ViewModifier {
     }
 }
 
-/// A short notice at the top of the map, e.g. when a trip ends. It goes away by itself.
+/// A short notice over the map, e.g. when a trip ends. It goes away by itself.
 private struct NoticeCapsule: View {
     let text: String
 
@@ -470,7 +517,46 @@ private struct NoticeCapsule: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .modifier(CapsuleBackground())
-            .padding(.top, 8)
+    }
+}
+
+/// Reports its frame in window coordinates whenever its layout changes, e.g. the sheet's
+/// as its detent changes. SwiftUI's global space inside a sheet may be the sheet's own.
+private struct WindowFrameReader: UIViewRepresentable {
+    let onChange: (CGRect) -> Void
+
+    func makeUIView(context: Context) -> ReaderView { ReaderView(onChange: onChange) }
+    func updateUIView(_ view: ReaderView, context: Context) { view.onChange = onChange }
+
+    final class ReaderView: UIView {
+        var onChange: (CGRect) -> Void
+        private var reported: CGRect?
+
+        init(onChange: @escaping (CGRect) -> Void) {
+            self.onChange = onChange
+            super.init(frame: .zero)
+            isUserInteractionEnabled = false
+        }
+
+        required init?(coder: NSCoder) { fatalError("not used from a storyboard") }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            report()
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            report()
+        }
+
+        private func report() {
+            guard window != nil else { return }
+            let frame = convert(bounds, to: nil)
+            guard frame != reported else { return }
+            reported = frame
+            DispatchQueue.main.async { [onChange] in onChange(frame) }  // not during a view update
+        }
     }
 }
 
@@ -597,12 +683,16 @@ private extension Coordinate {
 extension WatchManeuver {
     var symbolName: String {
         switch self {
-        case .none, .straight: "arrow.up"
-        case .left: "arrow.turn.up.left"
-        case .right: "arrow.turn.up.right"
-        case .slightLeft: "arrow.up.left"
-        case .slightRight: "arrow.up.right"
-        case .uturn: "arrow.uturn.down"
+        case .none, .straight, .roundaboutStraight: "arrow.up"
+        case .left, .roundaboutLeft: "arrow.turn.up.left"
+        case .right, .roundaboutRight: "arrow.turn.up.right"
+        case .slightLeft, .keepLeft, .rampLeft: "arrow.up.left"
+        case .slightRight, .keepRight, .rampRight: "arrow.up.right"
+        case .sharpLeft: "arrow.down.left"
+        case .sharpRight: "arrow.down.right"
+        // It turns left; iOS 17 has no mirrored one
+        case .uturnLeft, .uturnRight, .roundaboutUturn: "arrow.uturn.down"
+        case .mergeLeft, .mergeRight: "arrow.merge"
         case .arrive: "mappin.circle.fill"
         }
     }

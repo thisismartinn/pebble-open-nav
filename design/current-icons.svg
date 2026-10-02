@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="484" height="72" viewBox="-4 -4 484 76">
-<!-- PebbleOpenNav watch icons as drawn today. Box 44x52 (magenta, dashed), 8 px strokes, round caps/joins. -->
+<!-- PebbleOpenNav watch icons as drawn up to v3 (v4 uses the bitmaps from icons/icons-48x56.svg and icons-44x52.svg). Box 44x52 (magenta, dashed), 8 px strokes, round caps/joins. -->
 <g id="straight" transform="translate(0 0)">
 <rect width="44" height="52" fill="none" stroke="#FF00FF" stroke-width="0.5" stroke-dasharray="2 2"/>
 <path d="M21.5 48 L21.5 4 M21 4.5 L7 18.5 M21 4.5 L35 18.5" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>

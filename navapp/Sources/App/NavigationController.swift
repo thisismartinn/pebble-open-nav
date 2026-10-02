@@ -14,6 +14,8 @@ struct WatchLinkStatus: Equatable {
     var count = 0
     /// Longest gap between check-ins while the watchapp was open.
     var longestGap: TimeInterval = 0
+    /// The watchapp's version from its last check-in; nil if it didn't say (before v0.4).
+    var watchappVersion: String?
 }
 
 /// Watch colour theme. Light is easier to read in sunlight on colour watches.
@@ -187,14 +189,18 @@ final class NavigationController: NSObject, ObservableObject {
 
     private func fetchRoute(from fix: CLLocation, trip: UUID?) async {
         guard let trip, trip == tripID, let destination else { return }
+        // Already moving: start the route the way the rider is going. Without it a reroute
+        // can begin by sending them back the way they came.
+        let heading = OpenMapServices.heading(course: fix.course, courseAccuracy: fix.courseAccuracy, speed: fix.speed)
         do {
             let route = try await OpenMapServices.route(
                 from: Coordinate(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude),
                 to: destination.coordinate, costing: costing,
-                language: vietnamese ? "vi-VN" : "en-US")
+                language: vietnamese ? "vi-VN" : "en-US", heading: heading)
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
             tripLog?.event(guidance == nil ? "route" : "reroute", String(
-                format: "%.0f m, %.0fs, %d maneuvers", route.totalLength, route.totalTime, route.maneuvers.count))
+                format: "%.0f m, %.0fs, %d maneuvers", route.totalLength, route.totalTime, route.maneuvers.count)
+                + (heading.map { ", heading \($0)" } ?? ""))
             self.route = route
             let next = Guidance(route: route)
             next.speed = guidance?.speed ?? 0  // keep the watch predicting across a reroute
@@ -221,6 +227,7 @@ final class NavigationController: NSObject, ObservableObject {
         guard tripID != nil else { return }
         tripLog?.fix(time: fix.timestamp, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude,
                      accuracy: fix.horizontalAccuracy, speed: fix.speed, course: fix.course,
+                     speedAccuracy: fix.speedAccuracy, courseAccuracy: fix.courseAccuracy,
                      detail: isUsable(fix, maxAge: 10) ? "" : "skipped")
     }
 
@@ -377,7 +384,7 @@ final class NavigationController: NSObject, ObservableObject {
         let stats = server.pollStats
         let status = stats.last.map {
             WatchLinkStatus(connected: Date().timeIntervalSince($0) < 15, lastCheckIn: $0,
-                            count: stats.count, longestGap: stats.maxGap)
+                            count: stats.count, longestGap: stats.maxGap, watchappVersion: stats.version)
         } ?? WatchLinkStatus()
         if status != watchLink { watchLink = status }
     }

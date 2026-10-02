@@ -29,6 +29,7 @@ public final class StepServer: @unchecked Sendable {
     private var lastRequest: Date?
     private var maxGap: TimeInterval = 0
     private var requests = 0
+    private var version: String?
 
     public init() {}
 
@@ -42,11 +43,12 @@ public final class StepServer: @unchecked Sendable {
 
     /// When the watch last polled, and the longest gap between polls and their count
     /// in the current watchapp session. A growing gap with the phone locked means iOS
-    /// suspended the Pebble app.
-    public var pollStats: (last: Date?, maxGap: TimeInterval, count: Int) {
+    /// suspended the Pebble app. `version` is the watchapp's, from its last poll (`v`);
+    /// nil before v0.4, which didn't send it.
+    public var pollStats: (last: Date?, maxGap: TimeInterval, count: Int, version: String?) {
         lock.lock()
         defer { lock.unlock() }
-        return (lastRequest, maxGap, requests)
+        return (lastRequest, maxGap, requests, version)
     }
 
     /// Starts counting afresh, e.g. for a new trip. Keeps the last poll time, so the
@@ -59,7 +61,7 @@ public final class StepServer: @unchecked Sendable {
     }
 
     /// Counts a poll and returns the time since the previous one, and the body to serve.
-    func recordPoll(at now: Date) -> (gap: TimeInterval?, body: Data) {
+    func recordPoll(at now: Date, version: String? = nil) -> (gap: TimeInterval?, body: Data) {
         lock.lock()
         defer { lock.unlock() }
         let gap = lastRequest.map { now.timeIntervalSince($0) }
@@ -71,6 +73,7 @@ public final class StepServer: @unchecked Sendable {
         }
         lastRequest = now
         requests += 1
+        self.version = version
         return (gap, body)
     }
 
@@ -133,12 +136,13 @@ public final class StepServer: @unchecked Sendable {
                 connection.cancel()
                 return
             }
-            // "GET /step?t=123 HTTP/1.1"
+            // "GET /step?t=123&v=0.4 HTTP/1.1"
             let path = request.split(separator: " ").dropFirst().first.map(String.init) ?? ""
             let response: Data
             if path.hasPrefix("/step") {
                 let now = Date()
-                let (gap, body) = self.recordPoll(at: now)
+                let version = URLComponents(string: path)?.queryItems?.first { $0.name == "v" }?.value
+                let (gap, body) = self.recordPoll(at: now, version: version)
                 self.onPoll?(now, gap)
                 response = Self.http(status: "200 OK", body: body)
             } else {

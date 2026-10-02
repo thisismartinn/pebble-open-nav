@@ -33,7 +33,7 @@ public enum InstructionText {
             guard let n = m.roundaboutExitCount else { return valhallaText(m) }
             // The roundabout's own names are the ring's, not the road it leads to.
             street = next.flatMap { $0.type == 27 ? Self.street($0) : nil }
-            phrase = vietnamese ? ("Vòng xuyến: lối ra thứ \(n)", "vào") : ("Roundabout: exit \(n)", "onto")
+            phrase = vietnamese ? ("Rẽ lối thứ \(n)", "vào") : ("Take the \(ordinal(n)) exit", "onto")
         case 28:
             return vietnamese ? "Lên phà" : "Take the ferry"
         case 4:
@@ -50,6 +50,12 @@ public enum InstructionText {
         }
         guard let street else { return phrase.action }
         return [phrase.action, phrase.connector, street].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    /// "1st", "2nd", "3rd", "4th", … "11th", "12th", "13th", "21st".
+    static func ordinal(_ n: Int) -> String {
+        let suffix = (11...13).contains(n % 100) ? "th" : [1: "st", 2: "nd", 3: "rd"][n % 10] ?? "th"
+        return "\(n)\(suffix)"
     }
 
     /// Valhalla's own text, for maneuvers we have no phrase for. The spoken alert is

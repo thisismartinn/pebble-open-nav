@@ -21,8 +21,10 @@
 "Navigation ended" = "Navigation ended";
 "Precise Location is off, so directions can't follow you turn by turn." = "Precise Location is off, so directions can't follow you turn by turn.";
 "Open Settings" = "Open Settings";
-"Install Watchapp" = "Install Watchapp";
 "Pebble" = "Pebble";
+"PebbleOpenNav · v%@ (iPhone)" = "PebbleOpenNav · v%@ (iPhone)";
+"PebbleOpenNav · v%@ (iPhone) & v%@ (Pebble)" = "PebbleOpenNav · v%@ (iPhone) & v%@ (Pebble)";
+"PebbleOpenNav · v%@ (iPhone) · Pebble app not up to date" = "PebbleOpenNav · v%@ (iPhone) · Pebble app not up to date";
 "Something Went Wrong" = "Something Went Wrong";
 "OK" = "OK";
 "Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "Location is off for PebbleOpenNav. Turn it on in Settings to get directions.";
@@ -33,7 +35,6 @@
 "There are no roads near this place." = "There are no roads near this place.";
 "No route found to this place." = "No route found to this place.";
 "This trip is too long to route." = "This trip is too long to route.";
-"Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset." = "Open PebbleOpenNav on your Pebble. Directions reach it through the Pebble app on this iPhone. Automatic uses the light display between sunrise and sunset.";
 "Watch Display" = "Watch Display";
 "Automatic" = "Automatic";
 "Light" = "Light";

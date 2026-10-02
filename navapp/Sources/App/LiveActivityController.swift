@@ -110,7 +110,7 @@ final class LiveActivityController {
     // MARK: Mapping
 
     static func state(for update: GuidanceUpdate) -> NavActivityState {
-        NavActivityState(symbol: symbolName(WatchManeuver(valhallaType: update.maneuver.type)),
+        NavActivityState(symbol: symbolName(update.icon),
                          distance: roundedDistance(update.distanceToManeuver),
                          instruction: instruction(update.maneuver.instruction),
                          remaining: Int((max(0, update.remainingDistance) / 100).rounded()) * 100,
@@ -128,12 +128,16 @@ final class LiveActivityController {
     /// Same symbols as the trip screen (`WatchManeuver.symbolName` in ContentView).
     private static func symbolName(_ maneuver: WatchManeuver) -> String {
         switch maneuver {
-        case .none, .straight: "arrow.up"
-        case .left: "arrow.turn.up.left"
-        case .right: "arrow.turn.up.right"
-        case .slightLeft: "arrow.up.left"
-        case .slightRight: "arrow.up.right"
-        case .uturn: "arrow.uturn.down"
+        case .none, .straight, .roundaboutStraight: "arrow.up"
+        case .left, .roundaboutLeft: "arrow.turn.up.left"
+        case .right, .roundaboutRight: "arrow.turn.up.right"
+        case .slightLeft, .keepLeft, .rampLeft: "arrow.up.left"
+        case .slightRight, .keepRight, .rampRight: "arrow.up.right"
+        case .sharpLeft: "arrow.down.left"
+        case .sharpRight: "arrow.down.right"
+        // It turns left; iOS 17 has no mirrored one
+        case .uturnLeft, .uturnRight, .roundaboutUturn: "arrow.uturn.down"
+        case .mergeLeft, .mergeRight: "arrow.merge"
         case .arrive: "mappin.circle.fill"
         }
     }

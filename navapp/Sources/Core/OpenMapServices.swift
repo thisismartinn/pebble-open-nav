@@ -20,16 +20,11 @@ public enum OpenMapServices {
 
     // MARK: Routing
 
+    /// - Parameter heading: the direction of travel at `from` (`heading(course:…)`), so the
+    ///   route starts the way the rider is going rather than turning them round.
     public static func route(from: Coordinate, to: Coordinate, costing: Costing,
-                             language: String) async throws -> Route {
-        let body: [String: Any] = [
-            "locations": [
-                ["lat": from.lat, "lon": from.lon],
-                ["lat": to.lat, "lon": to.lon],
-            ],
-            "costing": costing.rawValue,
-            "directions_options": ["language": language, "units": "kilometers"],
-        ]
+                             language: String, heading: Int? = nil) async throws -> Route {
+        let body = routeRequest(from: from, to: to, costing: costing, language: language, heading: heading)
         var request = URLRequest(url: valhallaURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -42,6 +37,28 @@ public enum OpenMapServices {
             throw ServiceError(message: routeErrorMessage(code))
         }
         return try parseRoute(data, language: language)
+    }
+
+    /// The /route request body.
+    static func routeRequest(from: Coordinate, to: Coordinate, costing: Costing, language: String,
+                             heading: Int?) -> [String: Any] {
+        var origin: [String: Any] = ["lat": from.lat, "lon": from.lon]
+        if let heading {
+            origin["heading"] = heading
+            origin["heading_tolerance"] = 45
+        }
+        return [
+            "locations": [origin, ["lat": to.lat, "lon": to.lon]],
+            "costing": costing.rawValue,
+            "directions_options": ["language": language, "units": "kilometers"],
+        ]
+    }
+
+    /// The GPS course in whole degrees, when it's good enough to start a route by: known
+    /// within 45° and moving at 2 m/s or more. Core Location gives -1 for unknown values.
+    public static func heading(course: Double, courseAccuracy: Double, speed: Double) -> Int? {
+        guard course >= 0, courseAccuracy >= 0, courseAccuracy < 45, speed >= 2 else { return nil }
+        return Int(course.rounded()) % 360
     }
 
     /// Valhalla's error texts are English-only, so show our own translated message.

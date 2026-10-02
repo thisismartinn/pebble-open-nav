@@ -14,18 +14,24 @@ wrist beats a phone on the handlebars. It works just as well by car, bike or on 
 ## Features
 
 ### On the watch
-- **The next turn at a glance:** a turn arrow, the distance to the turn, a short instruction
-  ("U-turn at Liễu Giai", "Roundabout: exit 2 onto Khuất Duy Tiến"), the remaining distance,
+- **The next turn at a glance:** a turn icon, the distance to the turn, a short instruction
+  ("U-turn at Liễu Giai", "Take the 2nd exit onto Khuất Duy Tiến"), the remaining distance,
   the minutes left and your ETA.
+- **20 turn icons:** straight, left and right, slight, sharp, keep, U-turns both ways,
+  roundabouts (right, left, straight, U-turn), ramps, merges and arrival. A roundabout's icon
+  shows the way it really leads, from the route's shape.
 - **A smooth countdown:** between updates from the phone, the watch counts the distance down
   itself from your speed, so the number moves every second without draining the battery.
 - **Vibrations:**
-  - a double nudge at 200 m and 100 m before a turn;
-  - a short buzz when the next instruction appears, about 30 m before the corner, which is
-    your cue to signal;
+  - a short buzz when a new turn appears, which is your cue to signal, and a long one after
+    a reroute;
+  - a double nudge 100 m before a turn;
   - a single light tap when you arrive.
-- **The next instruction early:** it appears about 30 m before each corner, so you know
-  what comes after the turn you're taking.
+  - Buzzes never overlap: they come one at a time, at least 2 s apart.
+- **Ease-in to the next turn:** 25–45 m before a corner (more when you're faster), the watch
+  shows the next turn's icon and counts down to the corner. Just before the corner it switches
+  to the next turn's full screen by itself. Close turns stay on screen at least 3 s, and a
+  roundabout's exit stays up until you leave it.
 - **Honest connection status:** "Connecting…" after 20 s without news from the phone, then
   "Disconnected" after 40 s, or at once if PebbleOpenNav was closed. The last step stays on
   screen meanwhile.
@@ -51,8 +57,9 @@ wrist beats a phone on the handlebars. It works just as well by car, bike or on 
 - **Pebble section:**
   - the watch's connection ("Checked in 2s ago • 340 times, longest gap: 11s");
   - the watch theme: Automatic, Light or Dark;
-  - **Install Watchapp**: hands the bundled watchapp to the Pebble app;
-  - **Share Trip Log**: a CSV of your last five trips, for checking a ride afterwards.
+  - **Share Trip Log**: a CSV of your last five trips, for checking a ride afterwards;
+  - the versions in the footer ("v0.4 (iPhone) & v0.4 (Pebble)"), with a note when the
+    watchapp needs an update.
 - **Native iOS look:** SwiftUI, the system font and Liquid Glass on iOS 26. It runs from
   iOS 17.
 
@@ -79,9 +86,10 @@ letters.
 3. **The watch asks:** the watchapp's JavaScript runs inside the Pebble iPhone app, which
    holds the Bluetooth link. Each time the watch asks for an update, the JavaScript fetches
    the step and sends it to the watch as one small message.
-4. **The phone sets the pace:** each answer says when to ask next. That's every second near a
-   turn or when you're off the route, every 3 s within 1 km, and every 10 s beyond. In between,
-   the watch counts down by itself.
+4. **The phone sets the pace:** each answer says when to ask next. That's every second within
+   60 m of a turn or when you're off the route, every 2 s within 300 m (3 s when you're
+   stopped), every 3 s within 1 km, and every 10 s beyond. In between, the watch counts down by
+   itself.
 
 Your coordinates never reach the watch, only the result. The full contract (JSON fields,
 message keys, timings, connection states) is in [PROTOCOL.md](PROTOCOL.md).
@@ -104,9 +112,10 @@ You need:
    - On iOS 16 and later, turn on **Settings → Privacy & Security → Developer Mode**.
 3. **Allow location** when PebbleOpenNav asks. Keep **Precise Location** on, because
    turn-by-turn needs it.
-4. **Install the watchapp.** In PebbleOpenNav, open **Pebble → Install Watchapp** and choose
-   the Pebble app. You can also open `PebbleOpenNav.pbw` from Files or AirDrop with the Pebble
-   app.
+4. **Install the watchapp.** It is a separate file: `navwatch/build/navwatch.pbw` in this
+   repository, or the `.pbw` that comes with each build. Open it with the Pebble app from Files
+   or AirDrop. When the Pebble section's footer says "Pebble app not up to date", install the
+   newer `.pbw` the same way.
 5. **Ride.**
    - Search for a place, pick your vehicle and tap **Go**.
    - Open **PebbleOpenNav** on the watch.
@@ -144,9 +153,16 @@ You need the [Pebble SDK](https://developer.repebble.com) (`pebble` tool).
 cd navwatch && pebble build
 ```
 
-The build writes `navwatch/build/navwatch.pbw` for all seven Pebble platforms. To bundle it
-with the iPhone app, copy it to `navapp/Resources/PebbleOpenNav.pbw`. After changing
+The build writes `navwatch/build/navwatch.pbw` for all seven Pebble platforms. After changing
 `messageKeys` in `navwatch/package.json`, run `pebble clean` first.
+
+The turn icons are bitmaps made from the designs in `design/icons/` (`icons-48x56.svg` and
+`icons-44x52.svg`). After changing them, regenerate the bitmaps in
+`navwatch/resources/images/icons/`:
+
+```bash
+python3 navwatch/tools/build_icons.py
+```
 
 ### Testing without a ride
 - **Watch emulator with a fake phone:** [`navwatch/mock_server.py`](navwatch/mock_server.py)
@@ -197,7 +213,8 @@ with the iPhone app, copy it to `navapp/Resources/PebbleOpenNav.pbw`. After chan
 | `navwatch/src/c/` | The watchapp (C). |
 | `navwatch/src/pkjs/` | The watchapp's JavaScript, which runs inside the Pebble iPhone app. |
 | `navwatch/mock_server.py` | Fake phone for the watch emulator. |
-| `design/` | The watch layout spec ([`WATCH_LAYOUT.md`](design/WATCH_LAYOUT.md)) and the exact values from the Figma design. |
+| `navwatch/tools/build_icons.py` | Makes the watch's icon bitmaps from `design/icons/`. |
+| `design/` | The watch layout spec ([`WATCH_LAYOUT.md`](design/WATCH_LAYOUT.md)), the exact values from the Figma design, and the icon designs (`icons/`). |
 | `PROTOCOL.md` | The phone ↔ JavaScript ↔ watch contract. |
 
 ## Privacy
@@ -220,8 +237,6 @@ leave it only when you tap **Share Trip Log**.
 - Routing needs an internet connection and uses a public server without guarantees.
 - Live traffic is shown on the map but not used for routes or ETAs: Valhalla has no traffic
   data.
-- Roundabouts, merges and ferries show the straight-ahead arrow for now. Dedicated icons are
-  being designed.
 
 ## Credits
 - Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, under

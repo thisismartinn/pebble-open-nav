@@ -1,6 +1,7 @@
 // Runs inside the Pebble phone app. Each Tick from the watch fetches the
 // current step from the navigation app's local server on this phone (PROTOCOL.md).
 var STEP_URL = 'http://127.0.0.1:8765/step';
+var VERSION = '0.4';  // package.json "version" without the patch number; the nav app shows it
 var REQUEST_TIMEOUT_MS = 2500;
 var GPS_PROBE_MS = 15000;  // start-screen GPS line: at most this often
 var INSTRUCTION_MAX_BYTES = 90;  // the watch's inbox is sized for this
@@ -157,7 +158,7 @@ function handleStep(s, receivedAt) {
   } else {
     hadStep = true;
     var fixTime = Number(s.fixTime);
-    send({
+    var step = {
       StepId: s.stepId | 0,
       Maneuver: s.maneuver | 0,
       Distance: Math.round(s.distance),
@@ -167,7 +168,11 @@ function handleStep(s, receivedAt) {
       Speed: Math.max(0, Math.round((Number(s.speed) || 0) * 100)),
       // How old the fix was when we got it; the watch adds its own time since receipt.
       Age: fixTime > 0 ? Math.min(Math.max(0, receivedAt - fixTime), 3600000) : 0
-    }, poll);
+    };
+    // Only while the shown step is ahead of the corner being taken (the ToCorner phase).
+    var toCorner = s.toCorner == null ? NaN : Number(s.toCorner);
+    if (isFinite(toCorner)) step.ToCorner = Math.max(0, Math.round(toCorner));
+    send(step, poll);
   }
 }
 
@@ -193,7 +198,7 @@ function fetchStep() {
     setTimeout(function () { release(xhr); }, 1000);  // let a late response find its instance
   }, REQUEST_TIMEOUT_MS);
 
-  xhr.open('GET', STEP_URL + '?t=' + Date.now(), true);
+  xhr.open('GET', STEP_URL + '?t=' + Date.now() + '&v=' + VERSION, true);
   xhr.timeout = REQUEST_TIMEOUT_MS + 1000;
   xhr.onload = function () {
     if (!finish()) return;

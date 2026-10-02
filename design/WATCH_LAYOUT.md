@@ -1,4 +1,7 @@
-# Watch layout v3 (from PebbleOpenNav-UI-2.fig)
+# Watch layout v4 (from PebbleOpenNav-UI-2.fig)
+
+v4 keeps the v3 layout and adds the 20 turn icons from the designer's icon boards (below) and
+the ease-in screen.
 
 The exact values are in `figma-layers.txt` (all layers, positions relative to each screen's
 top-left) and `figma-icons.txt` (icon outlines). The Figma file's "Draft/Experiment" section
@@ -15,7 +18,7 @@ The app also builds for aplite, basalt, chalk and diorite:
   the v2 sizes: aplite, basalt, diorite and flint use the asterix layout, and chalk uses its
   scaled-getafix layout.
 - **Colour:** every colour platform (basalt, chalk, emery, gabbro) gets the v3 colours, and
-  every black-and-white platform (aplite, diorite, flint) gets the B&W colours. The arrive arrow
+  every black-and-white platform (aplite, diorite, flint) gets the B&W colours. The turn icons
   and the new texts apply everywhere.
 
 ## Fonts
@@ -66,7 +69,7 @@ All sizes are in pixels.
 | band text | Gothic 24 Bold, line height 24, centred both ways | same. On round, use PebbleOS's screen text flow (`graphics_text_attributes_enable_screen_text_flow`) so each line fits inside the circle |
 
 **Middle**, as a group centred horizontally: the distance block (64×55), a 20 px gap, then the
-icon. Centre the group using the actual icon width: 48 for turn arrows, 42.8 for the arrive arrow.
+icon. Centre the group using the icon width: 48 on obelix and getafix, 44 elsewhere.
 - **Distance block:** vertically centred in the middle area, so its top is mid_y + (mid_h − 55) / 2.
   - **Number line:** the box top is 3.5 px above the block top. It is a 42 px line,
     right-aligned to the block's right edge, and may extend left past the block (e.g. "800" is
@@ -75,22 +78,30 @@ icon. Centre the group using the actual icon width: 48 for turn arrows, 42.8 for
     the 42 px line centred on that box, right-aligned to the same edge.
   - **Same rule as v2**, at the new sizes: a two-line block, or one line on round screens when it
     fits (the one-line rule from v2 stays).
-- **Turn icon:** 48×57 on obelix, 48×56 on getafix, vertically centred in the middle area.
-  - The stroke is **9 px**, an odd width, so Pebble can draw it in one line. Figma scaled the
-    44×52 icon with its 8 px stroke up to ~8.8 px.
-  - Keep the v2 arrow shapes, scaled ×48/44 horizontally and ×57/52 (obelix) or ×56/52 (getafix)
-    vertically.
+- **Turn icon:** 48×56, vertically centred in the middle area (see Turn icons).
 
 ### asterix and the other small watches
 Unchanged from v2. Top bar y 0–20; middle y 20–85; band y 85–168 (padding 3/2/8/2, text at most
-140 wide, Gothic 18 Bold); Bitham 30 Black distance; 44×52 icons with an 8 px stroke. Only the
-colours, the arrive arrow and the texts change.
+140 wide, Gothic 18 Bold); Bitham 30 Black distance; 44×52 icons. Only the colours, the icons
+and the texts change.
 
-### Arrive icon (all platforms)
-The bullseye is replaced by the navigation arrow `Polygon 1`, **upright** (not rotated),
-42.84×46.38, filled with the icon colour: points (21.42, 0), (42.84, 46.38), (21.42, 33.66),
-(0, 46.38). Centre it in the icon slot (asterix: the 44×52 box; obelix 48×57; getafix 48×56).
-Same size on every platform.
+### Turn icons (all platforms)
+20 icons, one per maneuver code (`PROTOCOL.md` §1): straight, turn-left, turn-right,
+slight-left, slight-right, uturn-left, arrive, sharp-left, sharp-right, keep-left, keep-right,
+uturn-right, roundabout-right, roundabout-left, roundabout-straight, roundabout-uturn,
+ramp-left, ramp-right, merge-left, merge-right.
+- **Source:** the designer's boards `icons/icons-48x56.svg` and `icons/icons-44x52.svg`.
+  `python3 navwatch/tools/build_icons.py` turns them into bitmaps in
+  `navwatch/resources/images/icons/`; run it again after changing a board.
+- **Sizes:** 48×56 on obelix and getafix, 44×52 on every other platform.
+- **Colour:** white with 2-bit alpha on colour platforms, drawn in the icon colour. 1-bit white
+  on black on the black-and-white platforms.
+- **Arrive:** the upright navigation arrow, from the same boards.
+
+### Ease-in (the ToCorner phase)
+From 25–45 m before the corner being taken, the screen shows the next step's icon, and the
+distance counts down to that corner. The band is empty. Below 10 m it switches to the next
+step's full screen. Roundabouts have no ease-in.
 
 ### Disconnected
 The background is `#AA0000` (colour) in both themes.
