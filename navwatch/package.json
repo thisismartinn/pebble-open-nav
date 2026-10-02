@@ -46,66 +46,612 @@
     ],
     "resources": {
       "media": [
-        {"type": "bitmap", "name": "ICON_STRAIGHT", "file": "images/icons/48/straight.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_STRAIGHT", "file": "images/icons/44/straight.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_STRAIGHT", "file": "images/icons/44-bw/straight.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_TURN_LEFT", "file": "images/icons/48/turn-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_TURN_LEFT", "file": "images/icons/44/turn-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_TURN_LEFT", "file": "images/icons/44-bw/turn-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_TURN_RIGHT", "file": "images/icons/48/turn-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_TURN_RIGHT", "file": "images/icons/44/turn-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_TURN_RIGHT", "file": "images/icons/44-bw/turn-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_LEFT", "file": "images/icons/48/slight-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_LEFT", "file": "images/icons/44/slight-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_LEFT", "file": "images/icons/44-bw/slight-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_RIGHT", "file": "images/icons/48/slight-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_RIGHT", "file": "images/icons/44/slight-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_SLIGHT_RIGHT", "file": "images/icons/44-bw/slight-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_UTURN_LEFT", "file": "images/icons/48/uturn-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_UTURN_LEFT", "file": "images/icons/44/uturn-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_UTURN_LEFT", "file": "images/icons/44-bw/uturn-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_ARRIVE", "file": "images/icons/48/arrive.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_ARRIVE", "file": "images/icons/44/arrive.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_ARRIVE", "file": "images/icons/44-bw/arrive.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_SHARP_LEFT", "file": "images/icons/48/sharp-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_SHARP_LEFT", "file": "images/icons/44/sharp-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_SHARP_LEFT", "file": "images/icons/44-bw/sharp-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_SHARP_RIGHT", "file": "images/icons/48/sharp-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_SHARP_RIGHT", "file": "images/icons/44/sharp-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_SHARP_RIGHT", "file": "images/icons/44-bw/sharp-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_KEEP_LEFT", "file": "images/icons/48/keep-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_KEEP_LEFT", "file": "images/icons/44/keep-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_KEEP_LEFT", "file": "images/icons/44-bw/keep-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_KEEP_RIGHT", "file": "images/icons/48/keep-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_KEEP_RIGHT", "file": "images/icons/44/keep-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_KEEP_RIGHT", "file": "images/icons/44-bw/keep-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_UTURN_RIGHT", "file": "images/icons/48/uturn-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_UTURN_RIGHT", "file": "images/icons/44/uturn-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_UTURN_RIGHT", "file": "images/icons/44-bw/uturn-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_RIGHT", "file": "images/icons/48/roundabout-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_RIGHT", "file": "images/icons/44/roundabout-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_RIGHT", "file": "images/icons/44-bw/roundabout-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_LEFT", "file": "images/icons/48/roundabout-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_LEFT", "file": "images/icons/44/roundabout-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_LEFT", "file": "images/icons/44-bw/roundabout-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_STRAIGHT", "file": "images/icons/48/roundabout-straight.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_STRAIGHT", "file": "images/icons/44/roundabout-straight.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_STRAIGHT", "file": "images/icons/44-bw/roundabout-straight.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_UTURN", "file": "images/icons/48/roundabout-uturn.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_UTURN", "file": "images/icons/44/roundabout-uturn.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_ROUNDABOUT_UTURN", "file": "images/icons/44-bw/roundabout-uturn.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_RAMP_LEFT", "file": "images/icons/48/ramp-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_RAMP_LEFT", "file": "images/icons/44/ramp-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_RAMP_LEFT", "file": "images/icons/44-bw/ramp-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_RAMP_RIGHT", "file": "images/icons/48/ramp-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_RAMP_RIGHT", "file": "images/icons/44/ramp-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_RAMP_RIGHT", "file": "images/icons/44-bw/ramp-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_MERGE_LEFT", "file": "images/icons/48/merge-left.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_MERGE_LEFT", "file": "images/icons/44/merge-left.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_MERGE_LEFT", "file": "images/icons/44-bw/merge-left.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]},
-        {"type": "bitmap", "name": "ICON_MERGE_RIGHT", "file": "images/icons/48/merge-right.png", "targetPlatforms": ["emery", "gabbro"]},
-        {"type": "bitmap", "name": "ICON_MERGE_RIGHT", "file": "images/icons/44/merge-right.png", "targetPlatforms": ["basalt", "chalk"]},
-        {"type": "bitmap", "name": "ICON_MERGE_RIGHT", "file": "images/icons/44-bw/merge-right.png", "memoryFormat": "1Bit", "storageFormat": "pbi", "targetPlatforms": ["aplite", "diorite", "flint"]}
+        {
+          "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "images/menu-icon.png",
+          "menuIcon": true
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_STRAIGHT",
+          "file": "images/icons/48/straight.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_STRAIGHT",
+          "file": "images/icons/44/straight.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_STRAIGHT",
+          "file": "images/icons/44-bw/straight.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_LEFT",
+          "file": "images/icons/48/turn-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_LEFT",
+          "file": "images/icons/44/turn-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_LEFT",
+          "file": "images/icons/44-bw/turn-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_RIGHT",
+          "file": "images/icons/48/turn-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_RIGHT",
+          "file": "images/icons/44/turn-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_TURN_RIGHT",
+          "file": "images/icons/44-bw/turn-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_LEFT",
+          "file": "images/icons/48/slight-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_LEFT",
+          "file": "images/icons/44/slight-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_LEFT",
+          "file": "images/icons/44-bw/slight-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_RIGHT",
+          "file": "images/icons/48/slight-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_RIGHT",
+          "file": "images/icons/44/slight-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SLIGHT_RIGHT",
+          "file": "images/icons/44-bw/slight-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_LEFT",
+          "file": "images/icons/48/uturn-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_LEFT",
+          "file": "images/icons/44/uturn-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_LEFT",
+          "file": "images/icons/44-bw/uturn-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ARRIVE",
+          "file": "images/icons/48/arrive.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ARRIVE",
+          "file": "images/icons/44/arrive.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ARRIVE",
+          "file": "images/icons/44-bw/arrive.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_LEFT",
+          "file": "images/icons/48/sharp-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_LEFT",
+          "file": "images/icons/44/sharp-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_LEFT",
+          "file": "images/icons/44-bw/sharp-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_RIGHT",
+          "file": "images/icons/48/sharp-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_RIGHT",
+          "file": "images/icons/44/sharp-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SHARP_RIGHT",
+          "file": "images/icons/44-bw/sharp-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_LEFT",
+          "file": "images/icons/48/keep-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_LEFT",
+          "file": "images/icons/44/keep-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_LEFT",
+          "file": "images/icons/44-bw/keep-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_RIGHT",
+          "file": "images/icons/48/keep-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_RIGHT",
+          "file": "images/icons/44/keep-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_KEEP_RIGHT",
+          "file": "images/icons/44-bw/keep-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_RIGHT",
+          "file": "images/icons/48/uturn-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_RIGHT",
+          "file": "images/icons/44/uturn-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_UTURN_RIGHT",
+          "file": "images/icons/44-bw/uturn-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_RIGHT",
+          "file": "images/icons/48/roundabout-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_RIGHT",
+          "file": "images/icons/44/roundabout-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_RIGHT",
+          "file": "images/icons/44-bw/roundabout-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_LEFT",
+          "file": "images/icons/48/roundabout-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_LEFT",
+          "file": "images/icons/44/roundabout-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_LEFT",
+          "file": "images/icons/44-bw/roundabout-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_STRAIGHT",
+          "file": "images/icons/48/roundabout-straight.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_STRAIGHT",
+          "file": "images/icons/44/roundabout-straight.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_STRAIGHT",
+          "file": "images/icons/44-bw/roundabout-straight.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_UTURN",
+          "file": "images/icons/48/roundabout-uturn.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_UTURN",
+          "file": "images/icons/44/roundabout-uturn.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_ROUNDABOUT_UTURN",
+          "file": "images/icons/44-bw/roundabout-uturn.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_LEFT",
+          "file": "images/icons/48/ramp-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_LEFT",
+          "file": "images/icons/44/ramp-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_LEFT",
+          "file": "images/icons/44-bw/ramp-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_RIGHT",
+          "file": "images/icons/48/ramp-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_RIGHT",
+          "file": "images/icons/44/ramp-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_RAMP_RIGHT",
+          "file": "images/icons/44-bw/ramp-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_LEFT",
+          "file": "images/icons/48/merge-left.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_LEFT",
+          "file": "images/icons/44/merge-left.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_LEFT",
+          "file": "images/icons/44-bw/merge-left.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_RIGHT",
+          "file": "images/icons/48/merge-right.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_RIGHT",
+          "file": "images/icons/44/merge-right.png",
+          "targetPlatforms": [
+            "basalt",
+            "chalk"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_MERGE_RIGHT",
+          "file": "images/icons/44-bw/merge-right.png",
+          "memoryFormat": "1Bit",
+          "storageFormat": "pbi",
+          "targetPlatforms": [
+            "aplite",
+            "diorite",
+            "flint"
+          ]
+        }
       ]
     }
   }

@@ -9,6 +9,9 @@ exact coverage (8x8 samples per pixel) and written to navwatch/resources/images/
   48/<name>.png      white with 2-bit alpha, for Time 2 and Round 2 (recoloured on the watch)
   44/<name>.png      the same at 44x52, for Time, Time Steel and Time Round
   44-bw/<name>.png   1 bit, white on black, for Pebble, Pebble 2 and Pebble 2 Duo
+It also writes the launcher icon, navwatch/resources/images/menu-icon.png, from
+design/icons/icon-menu-25x25.svg: black with 2-bit alpha, which the launcher tints
+(at most 25x25 px for an SDK 4 app, or the watch shows its default icon).
 
 Figma exports a frame's position only when it clips its content, so the other frames are found
 from their labels: centred above the label, at the offset the clipped frames show.
@@ -182,8 +185,24 @@ def save(cov, path, bw):
         rgba = np.dstack([np.full(cov.shape, 255, np.uint8)] * 3 + [a])
         Image.fromarray(rgba).save(path)  # 4 channels: RGBA
 
+def menu_icon(path, out):
+    """The whole of a single-icon SVG (its viewBox), filled black over transparent."""
+    s = open(path).read()
+    w, h = (int(float(v)) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', s).groups()[:2])
+    if w > 25 or h > 25: sys.exit(f'{path}: {w}x{h} is larger than the 25x25 the launcher shows')
+    cov = np.zeros((h, w))
+    for m in re.finditer(r'<path ([^>]*?)/>', s):
+        a = attrs(m.group(1))
+        if 'stroke' in a: sys.exit(f'{path}: outline the strokes first (only fills are supported here)')
+        cov = np.maximum(cov, fill(a['d'], 0, 0, w, h, a.get('fill-rule') == 'evenodd'))
+    a = (np.round(cov * 3) * 85).astype(np.uint8)
+    Image.fromarray(np.dstack([np.zeros(cov.shape, np.uint8)] * 3 + [a])).save(out)  # RGBA
+
 def main():
-    out = os.path.join(ROOT, 'navwatch', 'resources', 'images', 'icons')
+    images = os.path.join(ROOT, 'navwatch', 'resources', 'images')
+    menu_icon(os.path.join(ROOT, 'design', 'icons', 'icon-menu-25x25.svg'), os.path.join(images, 'menu-icon.png'))
+    print('menu icon: 1')
+    out = os.path.join(images, 'icons')
     for size, w, h, kinds in (('48x56', 48, 56, [('48', False)]), ('44x52', 44, 52, [('44', False), ('44-bw', True)])):
         icons = load(os.path.join(ROOT, 'design', 'icons', f'icons-{size}.svg'), w, h)
         for folder, bw in kinds:
