@@ -1,7 +1,7 @@
 // Runs inside the Pebble phone app. Each Tick from the watch fetches the
 // current step from the navigation app's local server on this phone (PROTOCOL.md).
 var STEP_URL = 'http://127.0.0.1:8765/step';
-var VERSION = '0.5';  // package.json "version" without the patch number; the nav app shows it
+var VERSION = '0.5.1';  // package.json "version", less a .0 patch number; the nav app shows it
 var REQUEST_TIMEOUT_MS = 2500;
 var GPS_PROBE_MS = 15000;  // start-screen GPS line: at most this often
 var INSTRUCTION_MAX_BYTES = 90;  // the watch's inbox is sized for this

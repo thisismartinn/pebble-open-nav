@@ -260,5 +260,7 @@ The footer of the iPhone app's Pebble section shows the versions. The phone's is
 | sent the same version or a newer one | `PebbleOpenNav · v0.4 (iPhone) & v0.4 (Pebble)` |
 | sent an older one, or none (before v0.4) | `PebbleOpenNav · v0.4 (iPhone) · Pebble app not up to date` (Vietnamese `… · Vui lòng cập nhật app trên Pebble`) |
 
-Both apps are v0.5: `project.yml` `MARKETING_VERSION` 0.5, `CURRENT_PROJECT_VERSION` 5, and
-`package.json` `"version": "0.5.0"`. A new release bumps both and `VERSION` in `index.js`.
+The iPhone app is v0.5 (`project.yml` `MARKETING_VERSION` 0.5, `CURRENT_PROJECT_VERSION` 5) and
+the watchapp v0.5.1 (`package.json` `"version": "0.5.1"`, new icons only), so the footer reads
+`v0.5 (iPhone) & v0.5.1 (Pebble)`. A release bumps the app it changes, and a watchapp release
+also `VERSION` in `index.js`.
