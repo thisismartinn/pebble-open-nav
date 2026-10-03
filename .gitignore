@@ -6,3 +6,4 @@ navapp/*.xcodeproj
 .DS_Store
 navwatch/.lock-waf*
 release/
+navapp/triplog/
