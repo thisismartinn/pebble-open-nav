@@ -88,6 +88,10 @@ public enum OpenMapServices {
             // Guidance counts the roundabout as passed at its end, the exit, so its step
             // stays up until then.
             if m.type == 27, maneuvers.last?.type == 26 { continue }
+            // "Continue" (or the road changing its name) under 2 km is no turn to make: the watch
+            // shows the next real one instead. Valhalla adds them for e.g. a short unnamed piece
+            // of road across a junction ("Continue · 845 m"). Longer ones stay, as reassurance.
+            if [7, 8].contains(m.type), m.length < 2, i > 0, i < leg.maneuvers.count - 1 { continue }
             var m = m
             m.instruction = InstructionText.text(for: m, next: next, vietnamese: vietnamese)
             maneuvers.append(m)

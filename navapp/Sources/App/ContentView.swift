@@ -53,7 +53,8 @@ struct ContentView: View {
                         // At most a capsule's height short of the top: the sheet may be pulled up meanwhile.
                         .padding(.bottom, min(sheetTop.map { max(0, geometry.frame(in: .global).maxY - $0) + 32 } ?? 32,
                                               max(0, geometry.size.height - 60)))
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        // A short rise from the sheet's top edge while it fades in, not up from behind the sheet.
+                        .transition(.asymmetric(insertion: .offset(y: 32).combined(with: .opacity), removal: .opacity))
                 }
             }
             .allowsHitTesting(false)
@@ -331,7 +332,11 @@ private struct TripSheet: View {
             Picker(selection: $nav.watchTheme) {
                 ForEach(WatchTheme.allCases) { Text($0.label).tag($0) }
             } label: {
-                Label("Watch Display", systemImage: "circle.lefthalf.filled")
+                Label {
+                    Text("Watch Display")
+                } icon: {
+                    Image(systemName: "circle.lefthalf.filled").foregroundStyle(.primary)
+                }
             }
             if let problem = nav.serverProblem {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
@@ -341,6 +346,7 @@ private struct TripSheet: View {
                 ShareLink(item: log) {
                     Label("Share Trip Log", systemImage: "doc.text")
                 }
+                .tint(.primary)
             }
         } header: {
             Text("Pebble")
@@ -390,6 +396,7 @@ private struct WatchLinkRow: View {
             }
         } icon: {
             Image(systemName: "applewatch")
+                .foregroundStyle(.primary)  // the accent blue is too faint on the glass sheet
         }
         .accessibilityElement(children: .combine)
     }

@@ -98,6 +98,9 @@ from about 25 m before that corner, plus about 1 s of travel to cover the update
 counts down to the corner without the text, then switches to the step's full screen by itself
 just before the corner (§3). The watch's new-step buzz is the cue to signal. Rules:
 - The shown step is never more than one ahead of the first corner not yet passed.
+- **Only while moving:** the phase starts only at a speed along the route of at least 1.5 m/s
+  (0.5 m/s walking). Stopped at a light, or before setting off, the corner's own step stays up
+  with its text. Once started, the phase stays until the corner.
 - **Close turns:** a corner's own step stays up at least 3 s first, counted from when it became
   the corner being taken (the corner before it was passed, or a new route began). So when a turn
   is already within the lead as the last corner is passed, its full screen stays 3 s before its
@@ -132,7 +135,16 @@ facing the wrong way still counts as off the route, so riding back along it rero
 **Reroute:** 2 fixes in a row more than 25 m (or the fix's accuracy, if worse) from the route,
 or near only stretches of it facing the other way (riding back along the route), each with a GPS
 speed of at least 1 m/s (0.5 m/s walking). A fix without a speed neither counts nor resets; a
-slower one resets. At most one reroute per 15 s.
+slower one resets. At most one reroute per 15 s. When a reroute brings back the same next two
+turns as the route it replaces (e.g. riding on along a street the map has as one-way the other
+way), the route generation stays, so the step ids don't change and the watch doesn't buzz, and the
+next reroute waits twice as long, up to 60 s. Back on a route, it's 15 s again.
+
+**Route parsing:** a "Continue" (Valhalla type 8) or a road changing its name (7) shorter than
+2 km is dropped, so the step before it runs on to the next real turn. Longer ones stay.
+
+**Local server:** the app replaces its listener whenever it comes to the foreground, because iOS
+can tear the socket down while the app is suspended (e.g. locked after a trip, with GPS off).
 
 ## 2. AppMessage keys (JS ↔ watch)
 
@@ -248,5 +260,5 @@ The footer of the iPhone app's Pebble section shows the versions. The phone's is
 | sent the same version or a newer one | `PebbleOpenNav · v0.4 (iPhone) & v0.4 (Pebble)` |
 | sent an older one, or none (before v0.4) | `PebbleOpenNav · v0.4 (iPhone) · Pebble app not up to date` (Vietnamese `… · Vui lòng cập nhật app trên Pebble`) |
 
-Both apps are v0.4: `project.yml` `MARKETING_VERSION` 0.4, `CURRENT_PROJECT_VERSION` 4, and
-`package.json` `"version": "0.4.0"`. A new release bumps both and `VERSION` in `index.js`.
+Both apps are v0.5: `project.yml` `MARKETING_VERSION` 0.5, `CURRENT_PROJECT_VERSION` 5, and
+`package.json` `"version": "0.5.0"`. A new release bumps both and `VERSION` in `index.js`.

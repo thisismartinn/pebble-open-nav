@@ -82,6 +82,10 @@ final class NavigationController: NSObject, ObservableObject {
     /// step ids never repeat.
     private var routeGeneration = 0
     private var lastReroute = Date.distantPast
+    /// Seconds between reroutes: doubles, up to 60, while a reroute brings back the turns of the
+    /// route it replaces (e.g. riding on along a one-way street the map won't route that way),
+    /// and is 15 again once the rider is on the route.
+    private var rerouteInterval: TimeInterval = 15
     private var statusTimer: Timer?
     private var shutdownTask: Task<Void, Never>?
     private var payload: WatchPayload = .idle
@@ -119,7 +123,7 @@ final class NavigationController: NSObject, ObservableObject {
 
     /// Call when the app comes to the foreground.
     func appBecameActive() {
-        server.start()  // no-op while it's running; restarts it if iOS reclaimed the socket
+        server.restart()  // the socket may have died while the app was suspended
         refreshAccuracy()
         if phase == .idle { requestLocation() }
     }
@@ -198,16 +202,25 @@ final class NavigationController: NSObject, ObservableObject {
                 to: destination.coordinate, costing: costing,
                 language: vietnamese ? "vi-VN" : "en-US", heading: heading)
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
+            // The same turns as before: keep the step ids, so the watch doesn't buzz for a route
+            // that didn't change, and wait longer before the next try.
+            let sameTurns = guidance != nil && self.route.map {
+                Self.turns(of: route, from: 1) == Self.turns(of: $0, from: update?.maneuverIndex ?? 1)
+            } == true
             tripLog?.event(guidance == nil ? "route" : "reroute", String(
                 format: "%.0f m, %.0fs, %d maneuvers", route.totalLength, route.totalTime, route.maneuvers.count)
-                + (heading.map { ", heading \($0)" } ?? ""))
+                + (heading.map { ", heading \($0)" } ?? "") + (sameTurns ? ", same turns" : ""))
+            rerouteInterval = sameTurns ? min(rerouteInterval * 2, 60) : 15
             self.route = route
             let next = Guidance(route: route)
             next.speed = guidance?.speed ?? 0  // keep the watch predicting across a reroute
             next.startTime = fix.timestamp  // the rider has moved on while the route was fetched
-            if costing == .walk { next.offRouteMinSpeed = 0.5 }  // walking GPS speeds hover around 1 m/s
+            if costing == .walk {  // walking GPS speeds hover around 1 m/s
+                next.offRouteMinSpeed = 0.5
+                next.switchMinSpeed = 0.5
+            }
             guidance = next
-            routeGeneration += 1
+            if !sameTurns { routeGeneration += 1 }
             if phase == .routing { LiveActivityController.shared.start(destinationName: destinationName ?? "") }
             phase = .navigating
             if let location { handle(location) }
@@ -220,6 +233,11 @@ final class NavigationController: NSObject, ObservableObject {
             }
             // A failed reroute keeps the current route; the next off-route fix retries.
         }
+    }
+
+    /// The next two turns' texts from maneuver `index` on, to tell whether a reroute changed anything.
+    private static func turns(of route: Route, from index: Int) -> [String] {
+        route.maneuvers.dropFirst(index).prefix(2).map(\.instruction)
     }
 
     /// Logs a fix as Core Location delivered it, before `handle` decides whether to use it.
@@ -255,7 +273,8 @@ final class NavigationController: NSObject, ObservableObject {
         }
         publish(.step(u, routeGeneration: routeGeneration))
         LiveActivityController.shared.update(u, vietnamese: vietnamese)
-        if u.needsReroute, Date().timeIntervalSince(lastReroute) > 15 {
+        if !u.needsReroute, u.distanceFromRoute <= guidance.offRouteDistance { rerouteInterval = 15 }
+        if u.needsReroute, Date().timeIntervalSince(lastReroute) > rerouteInterval {
             lastReroute = Date()
             tripLog?.event("reroute requested")
             let trip = tripID

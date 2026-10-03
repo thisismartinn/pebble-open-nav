@@ -24,7 +24,7 @@ this from the repository root (needs numpy and Pillow):
 python3 navwatch/tools/build_icons.py
 ```
 
-`VERSION` in `src/pkjs/index.js` (now `0.4`) is sent as `&v=` with every `/step` request, so
+`VERSION` in `src/pkjs/index.js` (now `0.5`) is sent as `&v=` with every `/step` request, so
 the iPhone app can tell when the watchapp is out of date. Bump it with `package.json`'s
 `version`.
 

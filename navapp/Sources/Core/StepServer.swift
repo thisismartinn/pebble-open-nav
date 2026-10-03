@@ -90,6 +90,18 @@ public final class StepServer: @unchecked Sendable {
         }
     }
 
+    /// Replaces the listener with a new one. While the app is suspended (e.g. locked after
+    /// a trip, with GPS off) iOS can tear down the socket without the listener reporting it,
+    /// so `start()` would keep a dead listener. Call it when the app comes back.
+    public func restart() {
+        queue.async {
+            self.listener?.stateUpdateHandler = nil
+            self.listener?.cancel()
+            self.listener = nil
+            self.startOnQueue()
+        }
+    }
+
     private func startOnQueue() {
         guard listener == nil else { return }
         onStateChange?(.starting)
@@ -116,6 +128,10 @@ public final class StepServer: @unchecked Sendable {
                 self.onStateChange?(.failed(error.localizedDescription))
                 listener?.cancel()
                 if self.listener === listener { self.listener = nil }
+                self.restartSoon()
+            case .cancelled where self.listener === listener:
+                // Cancelled by the system, not by stop() or restart(), which clear it first.
+                self.listener = nil
                 self.restartSoon()
             default:
                 break

@@ -10,7 +10,7 @@ exact coverage (8x8 samples per pixel) and written to navwatch/resources/images/
   44/<name>.png      the same at 44x52, for Time, Time Steel and Time Round
   44-bw/<name>.png   1 bit, white on black, for Pebble, Pebble 2 and Pebble 2 Duo
 It also writes the launcher icon, navwatch/resources/images/menu-icon.png, from
-design/icons/icon-menu-25x25.svg: black with 2-bit alpha, which the launcher tints
+design/icons/icon-menu-25x25.svg: its own greys with 2-bit alpha, which the launcher tints
 (at most 25x25 px for an SDK 4 app, or the watch shows its default icon).
 
 Figma exports a frame's position only when it clips its content, so the other frames are found
@@ -186,17 +186,30 @@ def save(cov, path, bw):
         Image.fromarray(rgba).save(path)  # 4 channels: RGBA
 
 def menu_icon(path, out):
-    """The whole of a single-icon SVG (its viewBox), filled black over transparent."""
+    """The whole of a single-icon SVG (its viewBox): filled rects and paths, painted in order in
+    their own grey (black, white or #rrggbb), over transparent."""
     s = open(path).read()
     w, h = (int(float(v)) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', s).groups()[:2])
     if w > 25 or h > 25: sys.exit(f'{path}: {w}x{h} is larger than the 25x25 the launcher shows')
-    cov = np.zeros((h, w))
-    for m in re.finditer(r'<path ([^>]*?)/>', s):
-        a = attrs(m.group(1))
+    s = re.sub(r'<defs>.*?</defs>', '', s, flags=re.S)  # clip paths: the frame itself
+    grey, alpha = np.zeros((h, w)), np.zeros((h, w))
+    for m in re.finditer(r'<(path|rect)\b([^>]*?)/>', s):
+        a = attrs(m.group(2))
         if 'stroke' in a: sys.exit(f'{path}: outline the strokes first (only fills are supported here)')
-        cov = np.maximum(cov, fill(a['d'], 0, 0, w, h, a.get('fill-rule') == 'evenodd'))
-    a = (np.round(cov * 3) * 85).astype(np.uint8)
-    Image.fromarray(np.dstack([np.zeros(cov.shape, np.uint8)] * 3 + [a])).save(out)  # RGBA
+        if m.group(1) == 'rect':
+            x, y, rw, rh = (float(a.get(k, 0)) for k in ('x', 'y', 'width', 'height'))
+            d = f'M{x} {y}H{x + rw}V{y + rh}H{x}Z'
+        else:
+            d = a['d']
+        colour = a.get('fill', 'black').lower()
+        if colour == 'none': continue
+        rgb = {'black': '000000', 'white': 'ffffff'}.get(colour, colour.lstrip('#'))
+        g = sum(int(rgb[i:i + 2], 16) for i in (0, 2, 4)) / 3 / 255
+        c = fill(d, 0, 0, w, h, a.get('fill-rule') == 'evenodd')
+        grey = (grey * alpha * (1 - c) + g * c) / np.maximum(alpha * (1 - c) + c, 1e-9)
+        alpha = alpha * (1 - c) + c
+    v = (np.round(grey * 3) * 85).astype(np.uint8)
+    Image.fromarray(np.dstack([v, v, v, (np.round(alpha * 3) * 85).astype(np.uint8)])).save(out)  # RGBA
 
 def main():
     images = os.path.join(ROOT, 'navwatch', 'resources', 'images')

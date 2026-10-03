@@ -30,8 +30,11 @@ wrist beats a phone on the handlebars. It works just as well by car, bike or on 
   - Buzzes never overlap: they come one at a time, at least 2 s apart.
 - **Ease-in to the next turn:** 25–45 m before a corner (more when you're faster), the watch
   shows the next turn's icon and counts down to the corner. Just before the corner it switches
-  to the next turn's full screen by itself. Close turns stay on screen at least 3 s, and a
+  to the next turn's full screen by itself. It waits until you're moving, so at a light the
+  turn you're waiting to take stays on screen. Close turns stay on screen at least 3 s, and a
   roundabout's exit stays up until you leave it.
+- **No empty steps:** a "Continue" shorter than 2 km (often a short unnamed piece of road
+  across a junction) is skipped, so the watch shows the next real turn.
 - **Honest connection status:** "Connecting…" after 20 s without news from the phone, then
   "Disconnected" after 40 s, or at once if PebbleOpenNav was closed. The last step stays on
   screen meanwhile.

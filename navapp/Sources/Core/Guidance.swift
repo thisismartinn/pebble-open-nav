@@ -161,6 +161,9 @@ public final class Guidance {
     /// Not at a roundabout: its step stays up until the exit.
     public var switchLead = 25.0
     public var maxSwitchLead = 45.0
+    /// Only while moving at least this fast (m/s along the route): standing at a light or
+    /// before setting off, the watch keeps the turn being taken, with its text.
+    public var switchMinSpeed = 1.5
     /// How long a corner's own step stays up, at least, before the one after it replaces it,
     /// counted from when it became the next corner ahead.
     public var minStepTime = 3.0
@@ -342,7 +345,9 @@ public final class Guidance {
         // with turns close together the next one can be within the lead as soon as the last is
         // passed, and a new route (trip start or reroute) can begin within the lead of its first.
         let seen = shownIndex > nextIndex || time.timeIntervalSince(cornerSince ?? time) >= minStepTime
+        let moving = shownIndex > nextIndex || routeSpeed >= switchMinSpeed  // once shown, it stays
         let early = nextIndex + 1 < maneuvers.count && maneuvers[nextIndex].type != 26 && toCorner <= lead && seen
+            && moving
         var index = early ? nextIndex + 1 : nextIndex
         // Never back to an earlier step unless the fix is well before the corner passed last,
         // also with corners closer together than the lead.

@@ -1,0 +1,6 @@
+time,event,lat,lon,accuracy,speed,course,along,to_maneuver,maneuver_index,from_route,reroute,detail,to_corner,speed_accuracy,course_accuracy
+1791022456.736,start,,,,,,,,,,,Test · 2026-10-03T17:14:16+07:00,,,
+1791022456.738,fix,21.0000000,105.8000000,5.00,3.80,120.00,,,,,,,,0.50,12.00
+1791022456.738,guidance,,,,0.00,,0.00,100.00,1,60.00,1,held,100.00,,
+1791022456.738,publish,,,,,,,,,,,"{""active"":true,""distance"":100,""fixTime"":1791022456738,""instruction"":""m10"",""lang"":""en"",""maneuver"":3,""poll"":1000,""remainM"":5000,""remainS"":600,""speed"":0,""stepId"":1001,""theme"":""dark"",""themeAuto"":false}",,,
+1791022456.740,close,,,,,,,,,,,,,,
