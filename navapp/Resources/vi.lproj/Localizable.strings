@@ -29,7 +29,7 @@
 "OK" = "OK";
 "Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "PebbleOpenNav chưa được phép dùng vị trí. Hãy bật trong Cài đặt để nhận chỉ đường.";
 "You have arrived" = "Bạn đã tới nơi";
-"The watch link stopped (%@). Retrying…" = "Mất kết nối với đồng hồ (%@). Đang thử lại…";
+"The watch link stopped. Reconnecting…" = "Mất kết nối với đồng hồ. Đang kết nối lại…";
 "Couldn't get a route" = "Không tìm được đường đi";
 "Unnamed place" = "Địa điểm không tên";
 "There are no roads near this place." = "Không có đường nào gần địa điểm này.";

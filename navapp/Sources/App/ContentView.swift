@@ -338,20 +338,24 @@ private struct TripSheet: View {
                     Image(systemName: "circle.lefthalf.filled").foregroundStyle(.primary)
                 }
             }
-            if let problem = nav.serverProblem {
-                Label(problem, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.red)
-            }
             if let log = nav.tripLogURL {
                 ShareLink(item: log) {
-                    Label("Share Trip Log", systemImage: "doc.text")
+                    Label {
+                        Text("Share Trip Log").foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: "doc.text").foregroundStyle(.primary).opacity(0.75)
+                    }
                 }
-                .tint(.primary)
             }
         } header: {
             Text("Pebble")
         } footer: {
-            Text(versions)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(versions)
+                if nav.serverProblem {
+                    Label("The watch link stopped. Reconnecting…", systemImage: "exclamationmark.triangle")
+                }
+            }
         }
     }
 

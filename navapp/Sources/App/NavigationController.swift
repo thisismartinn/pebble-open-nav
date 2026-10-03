@@ -68,7 +68,9 @@ final class NavigationController: NSObject, ObservableObject {
             republish()
         }
     }
-    @Published var serverProblem: String?
+    /// The watch link has been down for a few seconds; the footer says it's reconnecting.
+    @Published var serverProblem = false
+    private var serverProblemTask: Task<Void, Never>?
 
     private let manager = CLLocationManager()
     private let server = StepServer()
@@ -391,9 +393,22 @@ final class NavigationController: NSObject, ObservableObject {
 
     private func serverStateChanged(_ state: StepServer.State) {
         switch state {
-        case .running: serverProblem = nil
+        case .running:
+            serverProblemTask?.cancel()
+            serverProblemTask = nil
+            serverProblem = false
         case .starting: break
-        case .failed(let message): serverProblem = String(localized: "The watch link stopped (\(message)). Retrying…")
+        case .failed(let message):
+            tripLog?.event("watch link", message)
+            // The server retries every 2 s and usually recovers at once: only a link that
+            // stays down is worth mentioning.
+            guard serverProblemTask == nil, !serverProblem else { break }
+            serverProblemTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !Task.isCancelled else { return }
+                self.serverProblem = true
+                self.serverProblemTask = nil
+            }
         }
     }
 

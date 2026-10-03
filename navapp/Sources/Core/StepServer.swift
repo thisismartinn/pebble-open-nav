@@ -93,12 +93,18 @@ public final class StepServer: @unchecked Sendable {
     /// Replaces the listener with a new one. While the app is suspended (e.g. locked after
     /// a trip, with GPS off) iOS can tear down the socket without the listener reporting it,
     /// so `start()` would keep a dead listener. Call it when the app comes back.
+    /// The new listener starts once the old one has let go of the port: binding it any
+    /// sooner fails with "Address already in use".
     public func restart() {
         queue.async {
-            self.listener?.stateUpdateHandler = nil
-            self.listener?.cancel()
+            guard let old = self.listener else { return self.startOnQueue() }
             self.listener = nil
-            self.startOnQueue()
+            old.stateUpdateHandler = { [weak self] state in
+                if case .cancelled = state { self?.startOnQueue() }
+            }
+            old.cancel()
+            // In case the old listener never reports its cancellation (startOnQueue runs once).
+            self.queue.asyncAfter(deadline: .now() + 1) { self.startOnQueue() }
         }
     }
 

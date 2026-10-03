@@ -29,7 +29,7 @@
 "OK" = "OK";
 "Location is off for PebbleOpenNav. Turn it on in Settings to get directions." = "Location is off for PebbleOpenNav. Turn it on in Settings to get directions.";
 "You have arrived" = "You have arrived";
-"The watch link stopped (%@). Retrying…" = "The watch link stopped (%@). Retrying…";
+"The watch link stopped. Reconnecting…" = "The watch link stopped. Reconnecting…";
 "Couldn't get a route" = "Couldn't get a route";
 "Unnamed place" = "Unnamed place";
 "There are no roads near this place." = "There are no roads near this place.";
