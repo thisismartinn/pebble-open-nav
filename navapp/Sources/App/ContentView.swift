@@ -33,13 +33,16 @@ struct ContentView: View {
                     appleMap.safeAreaPadding(.bottom, covered)
                 }
             }
-            .overlay(alignment: .bottomLeading) {
-                if covered < proxy.size.height - 80 {  // hidden behind a full-height sheet
+            // At the right, level with the logo on the left (clear of Apple's "Legal" beside
+            // it), and like the logo gone while the sheet is pulled up.
+            .overlay(alignment: .bottomTrailing) {
+                if detent != .large, covered < proxy.size.height - 80 {
                     mapDataButton
-                        .padding(.leading, maps.usesGoogle ? 78 : 64)
-                        .padding(.bottom, covered + (maps.usesGoogle ? 0 : 4))
+                        .padding(.bottom, covered - 6)
+                        .transition(.opacity)
                 }
             }
+            .animation(.smooth, value: detent == .large)
         }
         // Just above the sheet, where the eyes already are, rather than at the top of a tall screen.
         .overlay {
@@ -93,7 +96,7 @@ struct ContentView: View {
         .onChange(of: maps.usesGoogle) { search.dismissCard() }
     }
 
-    /// Opens what the map's data comes from, and its terms, beside the map's logo.
+    /// Opens what the map's data comes from, and its terms; level with the map's logo.
     private var mapDataButton: some View {
         Button("Map Data", systemImage: "info.circle") { showsMapData = true }
             .labelStyle(.iconOnly)
@@ -102,7 +105,7 @@ struct ContentView: View {
             .frame(width: 44, height: 44)
             .contentShape(.rect)
             .buttonStyle(.plain)
-            .padding(.leading, -11)  // the icon itself, not its tap area, sits by the logo
+            .padding(.trailing, -3)  // the icon itself, not its tap area, 8 pt from the edge as the logo
     }
 
     private func googleMap(bottomInset: CGFloat) -> some View {

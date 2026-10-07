@@ -20,38 +20,75 @@ public enum OpenMapServices {
 
     // MARK: Routing
 
-    /// - Parameter heading: the direction of travel at `from` (`heading(course:…)`), so the
-    ///   route starts the way the rider is going rather than turning them round.
-    public static func route(from: Coordinate, to: Coordinate, costing: Costing,
-                             language: String, heading: Int? = nil) async throws -> Route {
-        let body = routeRequest(from: from, to: to, costing: costing, language: language, heading: heading)
+    /// Two requests at once: one leaving now, which keeps to roads' time rules (e.g. no
+    /// motorbikes at rush hour) and is the reference, and one for up to two alternatives,
+    /// which Valhalla can't give for a departure time. Of the routes within 5% of the
+    /// reference's time, the one with the fewest turns wins: every turn costs time at
+    /// a junction that the estimate leaves out (`fewestTurns`).
+    /// - Parameters:
+    ///   - heading: the direction of travel at `from` (`heading(course:…)`), so the
+    ///     route starts the way the rider is going rather than turning them round.
+    ///   - avoiding: points on roads the rider has turned down this trip (see
+    ///     `NavigationController`), kept off the route. Dropped if no route avoids them.
+    public static func route(from: Coordinate, to: Coordinate, costing: Costing, language: String,
+                             heading: Int? = nil, avoiding: [Coordinate] = []) async throws -> Route {
+        @Sendable func request(alternatives: Bool, avoiding: [Coordinate]) async throws -> Data {
+            try await post(routeRequest(from: from, to: to, costing: costing, language: language, heading: heading,
+                                        leavingNow: !alternatives, alternatives: alternatives ? 2 : 0,
+                                        avoiding: avoiding))
+        }
+        async let others = try? request(alternatives: true, avoiding: avoiding)
+        let reference: Data
+        do {
+            reference = try await request(alternatives: false, avoiding: avoiding)
+        } catch where !avoiding.isEmpty {
+            reference = try await request(alternatives: false, avoiding: [])
+        }
+        let best = try parseRoutes(reference, language: language)[0]
+        // None when they failed, e.g. with no route avoiding those roads.
+        let alternatives = (await others).flatMap { try? parseRoutes($0, language: language) } ?? []
+        return fewestTurns(best, among: alternatives)
+    }
+
+    /// `best`, or among `others` taking at most 5% longer, the one with the fewest turns
+    /// (then the quickest).
+    static func fewestTurns(_ best: Route, among others: [Route]) -> Route {
+        let candidates = [best] + others.filter { $0.totalTime <= best.totalTime * 1.05 }
+        return candidates.min { ($0.turns, $0.totalTime) < ($1.turns, $1.totalTime) } ?? best
+    }
+
+    private static func post(_ body: [String: Any]) async throws -> Data {
         var request = URLRequest(url: valhallaURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = 20
-
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             let code = (try? JSONDecoder().decode(ValhallaError.self, from: data))?.errorCode
             throw ServiceError(message: routeErrorMessage(code))
         }
-        return try parseRoute(data, language: language)
+        return data
     }
 
     /// The /route request body.
     static func routeRequest(from: Coordinate, to: Coordinate, costing: Costing, language: String,
-                             heading: Int?) -> [String: Any] {
+                             heading: Int?, leavingNow: Bool = false, alternatives: Int = 0,
+                             avoiding: [Coordinate] = []) -> [String: Any] {
         var origin: [String: Any] = ["lat": from.lat, "lon": from.lon]
         if let heading {
             origin["heading"] = heading
             origin["heading_tolerance"] = 45
         }
-        return [
+        var body: [String: Any] = [
             "locations": [origin, ["lat": to.lat, "lon": to.lon]],
             "costing": costing.rawValue,
             "directions_options": ["language": language, "units": "kilometers"],
         ]
+        if leavingNow { body["date_time"] = ["type": 0] }  // depart now, in the start's local time
+        if alternatives > 0 { body["alternates"] = alternatives }
+        if !avoiding.isEmpty { body["exclude_locations"] = avoiding.map { ["lat": $0.lat, "lon": $0.lon] } }
+        return body
     }
 
     /// The GPS course in whole degrees, when it's good enough to start a route by: known
@@ -76,9 +113,18 @@ public enum OpenMapServices {
     /// - Parameter language: the language the route was requested in, e.g. "vi-VN".
     ///   By default the one the response says it's in.
     public static func parseRoute(_ data: Data, language: String? = nil) throws -> Route {
+        try parseRoutes(data, language: language)[0]
+    }
+
+    /// The route and any alternatives in a /route response, best first.
+    static func parseRoutes(_ data: Data, language: String? = nil) throws -> [Route] {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let trip = try decoder.decode(ValhallaResponse.self, from: data).trip
+        let response = try decoder.decode(ValhallaResponse.self, from: data)
+        return try ([response.trip] + (response.alternates ?? []).map(\.trip)).map { try route(of: $0, language: language) }
+    }
+
+    private static func route(of trip: ValhallaResponse.Trip, language: String?) throws -> Route {
         guard let leg = trip.legs.first else { throw ServiceError(message: String(localized: "Couldn't get a route")) }
         let vietnamese = (language ?? trip.language ?? "").hasPrefix("vi")
         var maneuvers: [ValhallaManeuver] = []
@@ -165,7 +211,9 @@ struct ValhallaResponse: Decodable {
         let summary: Summary
         let language: String?
     }
+    struct Alternate: Decodable { let trip: Trip }
     let trip: Trip
+    let alternates: [Alternate]?
 }
 
 struct ValhallaError: Decodable {

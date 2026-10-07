@@ -80,6 +80,9 @@ final class NavigationController: NSObject, ObservableObject {
     /// The Google key the trip routes with, or nil for Valhalla: fixed when it starts,
     /// since the maps source can't change during a trip.
     private var googleKey: String?
+    /// Roads the rider turned down this trip, kept off reroutes (Valhalla only): on each
+    /// one, a point 40 m on along the route they left. The latest five.
+    private var avoiding: [Coordinate] = []
     /// Identifies the current trip, so a route request from an earlier trip
     /// that finishes late is ignored.
     private var tripID: UUID?
@@ -158,6 +161,7 @@ final class NavigationController: NSObject, ObservableObject {
         update = nil
         guidance = nil
         tripID = UUID()
+        avoiding = []
         phase = .routing
         awaitingFix = true
         tripLog?.close("replaced by a new trip")
@@ -211,7 +215,8 @@ final class NavigationController: NSObject, ObservableObject {
                                                   vietnamese: vietnamese, heading: heading, key: googleKey)
             } else {
                 route = try await OpenMapServices.route(from: from, to: destination.coordinate, costing: costing,
-                                                language: vietnamese ? "vi-VN" : "en-US", heading: heading)
+                                                        language: vietnamese ? "vi-VN" : "en-US", heading: heading,
+                                                        avoiding: avoiding)
             }
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
             // The same turns as before: keep the step ids, so the watch doesn't buzz for a route
@@ -220,7 +225,9 @@ final class NavigationController: NSObject, ObservableObject {
                 Self.turns(of: route, from: 1) == Self.turns(of: $0, from: update?.maneuverIndex ?? 1)
             } == true
             tripLog?.event(guidance == nil ? "route" : "reroute", String(
-                format: "%.0f m, %.0fs, %d maneuvers", route.totalLength, route.totalTime, route.maneuvers.count)
+                format: "%.0f m, %.0fs, %d maneuvers, %d turns", route.totalLength, route.totalTime,
+                route.maneuvers.count, route.turns)
+                + (avoiding.isEmpty ? "" : ", avoiding \(avoiding.count)")
                 + (heading.map { ", heading \($0)" } ?? "") + (sameTurns ? ", same turns" : ""))
             rerouteInterval = sameTurns ? min(rerouteInterval * 2, 60) : 15
             self.route = route
@@ -288,10 +295,30 @@ final class NavigationController: NSObject, ObservableObject {
         if !u.needsReroute, u.distanceFromRoute <= guidance.offRouteDistance { rerouteInterval = 15 }
         if u.needsReroute, Date().timeIntervalSince(lastReroute) > rerouteInterval {
             lastReroute = Date()
+            if let refused = refusedRoad(u, here: here) {
+                avoiding = Array((avoiding + [refused]).suffix(5))
+                tripLog?.event("avoiding", String(format: "%.6f,%.6f", refused.lat, refused.lon))
+            }
             tripLog?.event("reroute requested")
             let trip = tripID
             Task { await fetchRoute(from: fix, trip: trip) }
         }
+    }
+
+    /// Where the rider left the route, the road the route went on along: 40 m past the last
+    /// point they were on it (the update holds that while off route), or further when that
+    /// is within 25 m of them, which could put their own road off limits. Nil within 60 m
+    /// of the destination, where the route has to go, and while they're under 50 m from the
+    /// route: GPS drift between tall buildings can reach 25 m, and then they haven't left it.
+    private func refusedRoad(_ u: GuidanceUpdate, here: Coordinate) -> Coordinate? {
+        guard let route = guidance?.route, u.distanceFromRoute >= 50 else { return nil }
+        for ahead in [40.0, 70.0] {
+            let along = u.along + ahead
+            guard along < route.totalLength - 60 else { return nil }
+            let point = Route.point(at: along, shape: route.shape, cumulative: route.cumulative)
+            if point.distance(to: here) >= 25 { return point }
+        }
+        return nil
     }
 
     /// Straight back to search, with a short notice. The watch keeps getting "ended"

@@ -11,6 +11,9 @@ public struct Route: Sendable {
 
     public var totalLength: Double { cumulative.last ?? 0 }
 
+    /// Maneuvers that change direction: not the start, arrival, or a "continue".
+    public var turns: Int { icons.filter { ![.none, .straight, .arrive].contains($0) }.count }
+
     /// - Parameter icons: the watch icon of each maneuver, when the route's source knows
     ///   them better; by default from the maneuver types and, for roundabouts, the shape.
     public init(shape: [Coordinate], maneuvers: [ValhallaManeuver], totalTime: Double,
