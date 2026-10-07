@@ -65,7 +65,7 @@ struct ContentView: View {
             if nav.endNotice == notice { nav.endNotice = nil }
         }
         .sheet(isPresented: .constant(true)) {
-            TripSheet(nav: nav, search: search, maps: maps, detent: $detent, sheetTop: $sheetTop,
+            TripSheet(nav: nav, search: search, detent: $detent, sheetTop: $sheetTop,
                       showsMapData: $showsMapData)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
