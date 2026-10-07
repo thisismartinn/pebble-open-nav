@@ -101,30 +101,11 @@
 "Music Venue" = "Music Venue";
 "Spa" = "Spa";
 
-/* Maps provider */
-"Maps Provider" = "Maps Provider";
-"Source" = "Source";
-"Apple + Valhalla" = "Apple + Valhalla";
-"Google" = "Google";
-"API Key" = "API Key";
-"Add" = "Add";
-"Google Maps API Key" = "Google Maps API Key";
-"Test Key" = "Test Key";
-"Remove Key" = "Remove Key";
-"Your own key from Google Cloud, with the Routes API, Places API (New) and Maps SDK for iOS on. Google bills its use to your account." = "Your own key from Google Cloud, with the Routes API, Places API (New) and Maps SDK for iOS on. Google bills its use to your account.";
-"Restart PebbleOpenNav to use the new key." = "Restart PebbleOpenNav to use the new key.";
-"Add your Google Maps API key. Until then, the app uses Apple Maps." = "Add your Google Maps API key. Until then, the app uses Apple Maps.";
-"Testing the key…" = "Testing the key…";
-"Google didn't accept this key, so the app uses Apple Maps." = "Google didn't accept this key, so the app uses Apple Maps.";
-"Google didn't accept this key, so the app uses Apple Maps. %@" = "Google didn't accept this key, so the app uses Apple Maps. %@";
+/* Map data */
 "Map Data" = "Map Data";
-"Google Maps Terms of Service" = "Google Maps Terms of Service";
-"Google Privacy Policy" = "Google Privacy Policy";
-"Map, places and routes: Google Maps" = "Map, places and routes: Google Maps";
 "Apple Maps Legal Notices" = "Apple Maps Legal Notices";
 "Map and places: Apple Maps" = "Map and places: Apple Maps";
 "© OpenStreetMap contributors" = "© OpenStreetMap contributors";
 "Routes: Valhalla" = "Routes: Valhalla";
 "House-number addresses: Photon" = "House-number addresses: Photon";
 "Done" = "Done";
-"Couldn't get a route (%@)" = "Couldn't get a route (%@)";

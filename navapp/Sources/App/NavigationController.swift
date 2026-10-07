@@ -77,10 +77,7 @@ final class NavigationController: NSObject, ObservableObject {
     private var guidance: Guidance?
     private var tripLog: TripLog?
     private var destination: OpenMapServices.Place?
-    /// The Google key the trip routes with, or nil for Valhalla: fixed when it starts,
-    /// since the maps source can't change during a trip.
-    private var googleKey: String?
-    /// Roads the rider turned down this trip, kept off reroutes (Valhalla only): on each
+    /// Roads the rider turned down this trip, kept off reroutes: on each
     /// one, a point 40 m on along the route they left. The latest five.
     private var avoiding: [Coordinate] = []
     /// Identifies the current trip, so a route request from an earlier trip
@@ -165,9 +162,7 @@ final class NavigationController: NSObject, ObservableObject {
         phase = .routing
         awaitingFix = true
         tripLog?.close("replaced by a new trip")
-        let maps = MapsProvider.shared
-        googleKey = maps.usesGoogle ? maps.key : nil
-        tripLog = TripLog(destination: place.name, detail: costing.rawValue + (googleKey == nil ? "" : " · google"))
+        tripLog = TripLog(destination: place.name, detail: costing.rawValue)
         tripLogURL = tripLog?.url
         server.start()
         server.resetStats()
@@ -209,15 +204,9 @@ final class NavigationController: NSObject, ObservableObject {
         let heading = OpenMapServices.heading(course: fix.course, courseAccuracy: fix.courseAccuracy, speed: fix.speed)
         do {
             let from = Coordinate(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
-            let route: Route
-            if let googleKey {
-                route = try await GoogleMapServices.route(from: from, to: destination.coordinate, costing: costing,
-                                                  vietnamese: vietnamese, heading: heading, key: googleKey)
-            } else {
-                route = try await OpenMapServices.route(from: from, to: destination.coordinate, costing: costing,
+            let route = try await OpenMapServices.route(from: from, to: destination.coordinate, costing: costing,
                                                         language: vietnamese ? "vi-VN" : "en-US", heading: heading,
                                                         avoiding: avoiding)
-            }
             guard trip == tripID else { return }  // trip ended or replaced meanwhile
             // The same turns as before: keep the step ids, so the watch doesn't buzz for a route
             // that didn't change, and wait longer before the next try.

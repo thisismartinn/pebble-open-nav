@@ -101,30 +101,11 @@
 "Music Venue" = "Địa điểm âm nhạc";
 "Spa" = "Spa";
 
-/* Maps provider */
-"Maps Provider" = "Nhà cung cấp bản đồ";
-"Source" = "Nguồn";
-"Apple + Valhalla" = "Apple + Valhalla";
-"Google" = "Google";
-"API Key" = "Khóa API";
-"Add" = "Thêm";
-"Google Maps API Key" = "Khóa API Google Maps";
-"Test Key" = "Kiểm tra khóa";
-"Remove Key" = "Xóa khóa";
-"Your own key from Google Cloud, with the Routes API, Places API (New) and Maps SDK for iOS on. Google bills its use to your account." = "Khóa của riêng bạn từ Google Cloud, đã bật Routes API, Places API (New) và Maps SDK for iOS. Google tính phí sử dụng vào tài khoản của bạn.";
-"Restart PebbleOpenNav to use the new key." = "Khởi động lại PebbleOpenNav để dùng khóa mới.";
-"Add your Google Maps API key. Until then, the app uses Apple Maps." = "Thêm khóa API Google Maps. Trước đó, ứng dụng dùng Apple Maps.";
-"Testing the key…" = "Đang kiểm tra khóa…";
-"Google didn't accept this key, so the app uses Apple Maps." = "Google không chấp nhận khóa này nên ứng dụng dùng Apple Maps.";
-"Google didn't accept this key, so the app uses Apple Maps. %@" = "Google không chấp nhận khóa này nên ứng dụng dùng Apple Maps. %@";
+/* Map data */
 "Map Data" = "Dữ liệu bản đồ";
-"Google Maps Terms of Service" = "Điều khoản dịch vụ Google Maps";
-"Google Privacy Policy" = "Chính sách quyền riêng tư của Google";
-"Map, places and routes: Google Maps" = "Bản đồ, địa điểm và đường đi: Google Maps";
 "Apple Maps Legal Notices" = "Thông báo pháp lý của Apple Maps";
 "Map and places: Apple Maps" = "Bản đồ và địa điểm: Apple Maps";
 "© OpenStreetMap contributors" = "© Những người đóng góp OpenStreetMap";
 "Routes: Valhalla" = "Đường đi: Valhalla";
 "House-number addresses: Photon" = "Địa chỉ số nhà: Photon";
 "Done" = "Xong";
-"Couldn't get a route (%@)" = "Không tìm được đường đi (%@)";
