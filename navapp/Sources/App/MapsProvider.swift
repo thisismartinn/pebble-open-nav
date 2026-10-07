@@ -47,8 +47,9 @@ final class MapsProvider: ObservableObject {
 
     private init() {
         source = MapsSource(rawValue: UserDefaults.standard.string(forKey: "mapsSource") ?? "") ?? .apple
-        key = Keychain.read()
-        keyStatus = key == nil ? .missing : UserDefaults.standard.bool(forKey: "googleKeyValid") ? .valid : .invalid("")
+        let saved = Keychain.read()
+        key = saved
+        keyStatus = saved == nil ? .missing : UserDefaults.standard.bool(forKey: "googleKeyValid") ? .valid : .invalid("")
         provideSDKKey()
     }
 
