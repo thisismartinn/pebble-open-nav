@@ -15,20 +15,19 @@ phone on the handlebars. It works by car, bicycle or on foot too.
 
 ### On the watch
 - **The next turn at a glance:** one of 20 turn icons, the distance to the turn, a short
-  instruction ("Take the 2nd exit onto Khuất Duy Tiến"), the distance and minutes left, and
-  your ETA. Between updates the watch counts the distance down itself from your speed.
+  instruction, the distance and minutes left, and your ETA.
+  Between updates the watch counts the distance down itself from your speed.
 - **Ease-in to the next turn:** 25–45 m before a corner the icon changes to the next turn
   while the distance counts down to the corner, then the next turn's full screen takes over.
   At a standstill the current turn stays up.
 - **Buzzes:** a short one for a new turn, a double nudge 100 m before it, a long one after a
   reroute, and a light tap on arrival. Never overlapping.
-- **Connection status:** "Connecting…" after 20 s without the phone, "Disconnected" after 40 s.
 - **Light and dark themes**, switching at sunrise and sunset, and layouts made for each watch.
 
 ![Pebble Round 2: start, Connecting…, Disconnected and arrival screens](docs/screenshots/round-states.png)
 
 ### On the iPhone
-- **Search like Apple Maps:** suggestions as you type, tappable places with a **Go** button,
+- **Search with Apple Maps:** suggestions as you type, tappable places with a **Go** button,
   and house-number addresses from OpenStreetMap (Photon).
 - **Routes for motorbike, car, bicycle or walking** from Valhalla:
   - follows time rules on roads (e.g. no motorbikes at rush hour);
@@ -39,8 +38,6 @@ phone on the handlebars. It works by car, bicycle or on foot too.
   Activity shows on the Lock Screen and in the Dynamic Island.
 - **Pebble section:** the watch's connection, the watch theme, **Share Trip Log** (a CSV of
   the last five trips), and both apps' versions, with a note when the watchapp is too old.
-- **Native iOS look:** SwiftUI and Liquid Glass on iOS 26; runs from iOS 17.
-- **Vietnamese and English**, following the phone's language, on the phone and the watch.
 
 ## How it works
 
