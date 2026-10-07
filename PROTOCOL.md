@@ -250,17 +250,18 @@ notices the silence itself (§3).
 
 ## 5. Version footer (phone)
 
-The footer of the iPhone app's Pebble section shows the versions. The phone's is its
-`CFBundleShortVersionString` (`MARKETING_VERSION` in `project.yml`); the watchapp's is the last
-`v` it sent. The two are compared as numbers.
+The footer at the bottom of the iPhone app's sheet (under Maps Provider) shows the versions. The
+phone's is its `CFBundleShortVersionString` (`MARKETING_VERSION` in `project.yml`); the watchapp's
+is the last `v` it sent, compared as a number with the oldest watchapp the phone app needs
+(`watchappNeeded` in `ContentView.swift`, now 0.5). That is raised only when the watch has to
+update too, so an iPhone-only release doesn't ask for a watchapp update.
 
 | watchapp | footer |
 |---|---|
-| hasn't polled yet | `PebbleOpenNav · v0.4 (iPhone)` |
-| sent the same version or a newer one | `PebbleOpenNav · v0.4 (iPhone) & v0.4 (Pebble)` |
-| sent an older one, or none (before v0.4) | `PebbleOpenNav · v0.4 (iPhone) · Pebble app not up to date` (Vietnamese `… · Vui lòng cập nhật app trên Pebble`) |
+| hasn't polled yet | `PebbleOpenNav · v0.6 (iPhone)` |
+| sent the needed version or a newer one | `PebbleOpenNav · v0.6 (iPhone) & v0.5.1 (Pebble)` |
+| sent an older one, or none (before v0.4) | `PebbleOpenNav · v0.6 (iPhone) · Pebble app not up to date` (Vietnamese `… · Vui lòng cập nhật app trên Pebble`) |
 
-The iPhone app is v0.5 (`project.yml` `MARKETING_VERSION` 0.5, `CURRENT_PROJECT_VERSION` 5) and
-the watchapp v0.5.1 (`package.json` `"version": "0.5.1"`, new icons only), so the footer reads
-`v0.5 (iPhone) & v0.5.1 (Pebble)`. A release bumps the app it changes, and a watchapp release
-also `VERSION` in `index.js`.
+The iPhone app is v0.6 (`project.yml` `MARKETING_VERSION` 0.6, `CURRENT_PROJECT_VERSION` 6) and
+the watchapp v0.5.1 (`package.json` `"version": "0.5.1"`). A release bumps the app it changes, and
+a watchapp release also `VERSION` in `index.js`.

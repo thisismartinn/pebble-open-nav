@@ -10,40 +10,37 @@ import UIKit
 struct ContentView: View {
     @StateObject private var nav = NavigationController()
     @StateObject private var search = SearchModel()
+    @ObservedObject private var maps = MapsProvider.shared
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     @State private var camera: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var detent: PresentationDetent = ContentView.collapsed
     /// The sheet's top edge in window coordinates, for the notice above it.
     @State private var sheetTop: CGFloat?
+    @State private var showsMapData = false
 
     static let collapsed = PresentationDetent.fraction(0.3)
 
     var body: some View {
-        // Apple's places are tappable (only while idle); they open the place card.
-        Map(position: $camera, selection: $search.selectedFeature) {
-            UserAnnotation()
-            if let route = nav.route {
-                MapPolyline(coordinates: route.shape.map(\.location2D))
-                    .stroke(.blue, lineWidth: 6)
-                if let end = route.shape.last {
-                    Marker(nav.destinationName ?? String(localized: "Destination"), coordinate: end.location2D)
+        GeometryReader { proxy in
+            // The sheet covers the map's bottom: the map's logo (Apple's or Google's, which
+            // must stay visible) and our ⓘ beside it ride just above the sheet.
+            let covered = sheetTop.map { max(0, proxy.frame(in: .global).maxY - $0) } ?? 0
+            Group {
+                if maps.usesGoogle {
+                    googleMap(bottomInset: covered)
+                } else {
+                    appleMap.safeAreaPadding(.bottom, covered)
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if covered < proxy.size.height - 80 {  // hidden behind a full-height sheet
+                    mapDataButton
+                        .padding(.leading, maps.usesGoogle ? 78 : 64)
+                        .padding(.bottom, covered + (maps.usesGoogle ? 0 : 4))
                 }
             }
         }
-        .mapStyle(.standard(pointsOfInterest: .all, showsTraffic: true))
-        .mapFeatureSelectionDisabled { feature in
-            nav.phase != .idle || feature.kind != .pointOfInterest
-        }
-        .mapControls {
-            MapUserLocationButton()
-            MapCompass()
-            MapScaleView()
-        }
-        .onChange(of: search.selectedFeature) { _, feature in
-            search.show(feature)
-            if feature != nil, detent == .large { detent = .medium }
-        }
-        .onReceive(nav.$location) { search.near = $0 }
         // Just above the sheet, where the eyes already are, rather than at the top of a tall screen.
         .overlay {
             GeometryReader { geometry in
@@ -70,7 +67,8 @@ struct ContentView: View {
             if nav.endNotice == notice { nav.endNotice = nil }
         }
         .sheet(isPresented: .constant(true)) {
-            TripSheet(nav: nav, search: search, detent: $detent, sheetTop: $sheetTop)
+            TripSheet(nav: nav, search: search, maps: maps, detent: $detent, sheetTop: $sheetTop,
+                      showsMapData: $showsMapData)
                 .presentationDetents([ContentView.collapsed, .medium, .large], selection: $detent)
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                 .presentationDragIndicator(.visible)
@@ -92,15 +90,70 @@ struct ContentView: View {
                 detent = ContentView.collapsed  // the end-of-trip notice shows above the sheet
             }
         }
+        .onChange(of: maps.usesGoogle) { search.dismissCard() }
+    }
+
+    /// Opens what the map's data comes from, and its terms, beside the map's logo.
+    private var mapDataButton: some View {
+        Button("Map Data", systemImage: "info.circle") { showsMapData = true }
+            .labelStyle(.iconOnly)
+            .font(.body)
+            .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.8) : Color.black.opacity(0.6))
+            .frame(width: 44, height: 44)
+            .contentShape(.rect)
+            .buttonStyle(.plain)
+            .padding(.leading, -11)  // the icon itself, not its tap area, sits by the logo
+    }
+
+    private func googleMap(bottomInset: CGFloat) -> some View {
+        GoogleMapView(route: nav.route, destinationName: nav.destinationName, location: nav.location,
+                      navigating: nav.phase == .navigating, bottomInset: bottomInset) { id, name, coordinate in
+            search.showGooglePlace(id: id, name: name, coordinate: coordinate)
+            if detent == .large { detent = .medium }
+        }
+        .ignoresSafeArea()
+        .onReceive(nav.$location) { search.near = $0 }
+    }
+
+    private var appleMap: some View {
+        // Apple's places are tappable (only while idle); they open the place card.
+        Map(position: $camera, selection: $search.selectedFeature) {
+            UserAnnotation()
+            if let route = nav.route {
+                MapPolyline(coordinates: route.shape.map(\.location2D))
+                    .stroke(.blue, lineWidth: 6)
+                if let end = route.shape.last {
+                    Marker(nav.destinationName ?? String(localized: "Destination"), coordinate: end.location2D)
+                }
+            }
+        }
+        .mapStyle(.standard(pointsOfInterest: .all, showsTraffic: true))
+        .mapFeatureSelectionDisabled { feature in
+            nav.phase != .idle || feature.kind != .pointOfInterest
+        }
+        .mapControls {
+            MapUserLocationButton()
+            MapCompass()
+            MapScaleView()
+        }
+        .onChange(of: search.selectedFeature) { _, feature in
+            search.show(feature)
+            if feature != nil, detent == .large { detent = .medium }
+        }
+        .onReceive(nav.$location) { search.near = $0 }
     }
 }
 
 private struct TripSheet: View {
     @ObservedObject var nav: NavigationController
     @ObservedObject var search: SearchModel
+    @ObservedObject var maps: MapsProvider
     @Binding var detent: PresentationDetent
     @Binding var sheetTop: CGFloat?
+    @Binding var showsMapData: Bool
     @FocusState private var searchFocused: Bool
+    @State private var editingKey = false
+    @State private var keyDraft = ""
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -130,6 +183,22 @@ private struct TripSheet: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(nav.errorMessage ?? search.errorMessage ?? "")
+        }
+        .alert("Google Maps API Key", isPresented: $editingKey) {
+            TextField("API Key", text: $keyDraft)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Test Key") { Task { await maps.setKey(keyDraft) } }
+            if maps.key != nil {
+                Button("Remove Key", role: .destructive) { Task { await maps.setKey("") } }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your own key from Google Cloud, with the Routes API, Places API (New) and Maps SDK for iOS on. Google bills its use to your account.")
+        }
+        // From the sheet, like the alerts: the view under a presented sheet can't present.
+        .sheet(isPresented: $showsMapData) {
+            MapDataSheet(google: maps.usesGoogle)
         }
     }
 
@@ -166,7 +235,7 @@ private struct TripSheet: View {
                                     nav.start(to: place)
                                 }
                             } label: {
-                                SuggestionRow(completion: suggestion)
+                                SuggestionRow(suggestion: suggestion)
                             }
                             .tint(.primary)
                         }
@@ -180,6 +249,7 @@ private struct TripSheet: View {
             }
             precisionSection
             watchSection
+            mapsSection
         }
         .sheetGlassListBackground(detent)
         // No navigation bar while searching: it would only leave an empty gap above the
@@ -256,6 +326,7 @@ private struct TripSheet: View {
             }
             precisionSection
             watchSection
+            mapsSection
         }
         .sheetGlassListBackground(detent)
         .contentMargins(.top, Self.underTitle, for: .scrollContent)
@@ -298,6 +369,7 @@ private struct TripSheet: View {
             }
             precisionSection
             watchSection
+            mapsSection
         }
         .sheetGlassListBackground(detent)
         .contentMargins(.top, Self.underTitle, for: .scrollContent)
@@ -349,26 +421,91 @@ private struct TripSheet: View {
             }
         } header: {
             Text("Pebble")
+        }
+    }
+
+    /// Apple + Valhalla or Google, and Google's key. The app switches to Google only
+    /// once the key has passed its test; not during a trip.
+    private var mapsSection: some View {
+        Section {
+            Picker(selection: $maps.source) {
+                ForEach(MapsSource.allCases) { Text($0.label).tag($0) }
+            } label: {
+                Label {
+                    Text("Source")
+                } icon: {
+                    Image(systemName: "map").foregroundStyle(.primary)
+                }
+            }
+            if maps.source == .google {
+                Button {
+                    keyDraft = maps.key ?? ""
+                    editingKey = true
+                } label: {
+                    LabeledContent {
+                        HStack(spacing: 6) {
+                            Text(maps.maskedKey ?? String(localized: "Add"))
+                                .monospacedDigit()
+                            keyStatusIcon
+                        }
+                    } label: {
+                        Text("API Key").foregroundStyle(.primary)
+                    }
+                }
+            }
+        } header: {
+            Text("Maps Provider")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
+                if let note = keyNote { Text(note) }
                 Text(versions)
                 if nav.serverProblem {
                     Label("The watch link stopped. Reconnecting…", systemImage: "exclamationmark.triangle")
                 }
             }
         }
+        .disabled(nav.phase != .idle)
     }
 
-    /// "PebbleOpenNav · v0.4 (iPhone) & v0.4 (Pebble)". The watchapp is installed on its own,
+    @ViewBuilder private var keyStatusIcon: some View {
+        switch maps.keyStatus {
+        case .testing: ProgressView()
+        case .valid: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        case .invalid: Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+        case .missing: EmptyView()
+        }
+    }
+
+    /// Why Google isn't in use yet, when it's chosen.
+    private var keyNote: String? {
+        guard maps.source == .google else { return nil }
+        if maps.needsRestart { return String(localized: "Restart PebbleOpenNav to use the new key.") }
+        switch maps.keyStatus {
+        case .missing: return String(localized: "Add your Google Maps API key. Until then, the app uses Apple Maps.")
+        case .testing: return String(localized: "Testing the key…")
+        case .invalid(let reason):
+            return reason.isEmpty
+                ? String(localized: "Google didn't accept this key, so the app uses Apple Maps.")
+                : String(localized: "Google didn't accept this key, so the app uses Apple Maps. \(reason)")
+        case .valid: return nil
+        }
+    }
+
+    /// "PebbleOpenNav · v0.6 (iPhone) & v0.5.1 (Pebble)". The watchapp is installed on its own,
     /// so it can be older; before v0.4 it didn't say its version.
     private var versions: String {
         let phone = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         guard nav.watchLink.lastCheckIn != nil else { return String(localized: "PebbleOpenNav · v\(phone) (iPhone)") }
-        if let watch = nav.watchLink.watchappVersion, watch.compare(phone, options: .numeric) != .orderedAscending {
+        if let watch = nav.watchLink.watchappVersion,
+           watch.compare(Self.watchappNeeded, options: .numeric) != .orderedAscending {
             return String(localized: "PebbleOpenNav · v\(phone) (iPhone) & v\(watch) (Pebble)")
         }
         return String(localized: "PebbleOpenNav · v\(phone) (iPhone) · Pebble app not up to date")
     }
+
+    /// The oldest watchapp this app works fully with: raised when the watch must update too,
+    /// not with every iPhone release.
+    private static let watchappNeeded = "0.5"
 }
 
 /// Whether the Pebble watchapp is polling: "Connected", checked in 5s ago • 62 times.
@@ -412,16 +549,16 @@ private struct WatchLinkRow: View {
     }
 }
 
-/// Apple Maps type-ahead suggestion, with the typed part in bold.
+/// A type-ahead suggestion, with the typed part in bold.
 private struct SuggestionRow: View {
-    let completion: MKLocalSearchCompletion
+    let suggestion: Suggestion
 
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
-                Text(Self.highlighted(completion.title, completion.titleHighlightRanges))
-                if !completion.subtitle.isEmpty {
-                    Text(completion.subtitle)
+                Text(suggestion.title)
+                if !suggestion.subtitle.isEmpty {
+                    Text(suggestion.subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -431,15 +568,51 @@ private struct SuggestionRow: View {
                 .foregroundStyle(.red)
         }
     }
+}
 
-    private static func highlighted(_ text: String, _ ranges: [NSValue]) -> AttributedString {
-        var result = AttributedString(text)
-        for value in ranges {
-            guard let range = Range(value.rangeValue, in: text),
-                  let attributed = Range(range, in: result) else { continue }
-            result[attributed].inlinePresentationIntent = .stronglyEmphasized
+/// Where the map, places and routes come from, with their terms: opened from the ⓘ
+/// beside the map's logo.
+private struct MapDataSheet: View {
+    let google: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if google {
+                    Section {
+                        Link("Google Maps Terms of Service", destination: URL(string: "https://maps.google.com/help/terms_maps/")!)
+                        Link("Google Privacy Policy", destination: URL(string: "https://policies.google.com/privacy")!)
+                    } header: {
+                        Text("Map, places and routes: Google Maps")
+                    }
+                } else {
+                    Section {
+                        Link("Apple Maps Legal Notices", destination: URL(string: "https://www.apple.com/legal/internet-services/maps/")!)
+                    } header: {
+                        Text("Map and places: Apple Maps")
+                    }
+                    Section {
+                        Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                    } header: {
+                        Text("Routes: Valhalla")
+                    }
+                }
+                Section {
+                    Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                } header: {
+                    Text("House-number addresses: Photon")
+                }
+            }
+            .navigationTitle("Map Data")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
-        return result
+        .presentationDetents([.medium, .large])
     }
 }
 

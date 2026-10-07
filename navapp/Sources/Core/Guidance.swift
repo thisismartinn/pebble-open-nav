@@ -11,18 +11,27 @@ public struct Route: Sendable {
 
     public var totalLength: Double { cumulative.last ?? 0 }
 
-    public init(shape: [Coordinate], maneuvers: [ValhallaManeuver], totalTime: Double) {
+    /// - Parameter icons: the watch icon of each maneuver, when the route's source knows
+    ///   them better; by default from the maneuver types and, for roundabouts, the shape.
+    public init(shape: [Coordinate], maneuvers: [ValhallaManeuver], totalTime: Double,
+                icons: [WatchManeuver]? = nil) {
         self.shape = shape
         self.maneuvers = maneuvers
         self.totalTime = totalTime
+        let cum = Self.cumulative(shape)
+        self.cumulative = cum
+        self.icons = icons ?? maneuvers.map { m in
+            WatchManeuver(m, roundaboutTurn: m.type == 26 ? Self.turn(at: m, shape: shape, cumulative: cum) : nil)
+        }
+    }
+
+    /// Distance along `shape` to each of its points, in metres.
+    static func cumulative(_ shape: [Coordinate]) -> [Double] {
         var cum = [0.0]
         for i in 1..<max(shape.count, 1) {
             cum.append(cum[i - 1] + shape[i - 1].distance(to: shape[i]))
         }
-        self.cumulative = cum
-        icons = maneuvers.map { m in
-            WatchManeuver(m, roundaboutTurn: m.type == 26 ? Self.turn(at: m, shape: shape, cumulative: cum) : nil)
-        }
+        return cum
     }
 
     /// How far a roundabout turns the rider, in degrees, positive to the right: the heading
